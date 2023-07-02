@@ -1,10 +1,11 @@
 import sys
 import torch
-from AdvPatchGenerator import NoiseLikePatch
-from Data import coco_2017_dev_5k
-from Trainer import AdvPatchTrainer
-from Utils.utils import PatternProjector, ToxicTargetsGenerator, log
-sys.path.append('Models/Detection/FasterRCNN')
+from adv_patch_generator import NoiseLikePatch
+from data import coco_2017_dev_5k
+from trainer import AdvPatchTrainer
+from utils.utils import PatternProjector, ToxicTargetsGenerator
+from utils.utils_evaluate import log
+sys.path.append('models/detection/faster_rcnn')
 
 
 class LossFunction:
@@ -19,7 +20,7 @@ class LossFunction:
 
 
 if __name__ == '__main__':
-    from Models.Detection.FasterRCNN.my_pretrained_faster_rcnn import fasterrcnn_mobilenet_v3_large_320_fpn_COCO
+    from models.detection.faster_rcnn.my_pretrained_faster_rcnn import fasterrcnn_mobilenet_v3_large_320_fpn_COCO
 
     # print('WATCH OUT, it\'s ATTACK!')
     # train_ds, valid_ds = imagenet_1k_mini()
@@ -33,7 +34,7 @@ if __name__ == '__main__':
     #                           projector=projector,
     #                           loss_function=loss_func,
     #                           optimizer=torch.optim.Adam(patch_generator.parameters(), lr=0.002))
-    # trainer.train('Classification',
+    # trainer.train('classification',
     #               train_ds,
     #               batch_size=4,
     #               num_epochs=2,
@@ -130,4 +131,4 @@ if __name__ == '__main__':
     def watcher(data, f):
         log(data, f)
 
-    trainer.train('Detection', train_ds, 8, 2, valid_ds, "./detect_log_5_22.txt", 1, train_watcher=watcher)
+    trainer.train('detection', train_ds, 8, 2, valid_ds, "./detect_log_5_22.txt", 1, train_watcher=watcher)

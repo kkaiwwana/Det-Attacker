@@ -5,7 +5,7 @@ from anchor_utils import AnchorGenerator
 
 
 class DummyBackbone(torch.nn.Module):
-    # to fool FasterRCNN class
+    # to fool faster_rcnn class
     def __init__(self, out_channels):
         super().__init__()
         self.out_channels = out_channels

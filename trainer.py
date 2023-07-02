@@ -1,7 +1,8 @@
 import torch
 import torch.utils.data as data
 from typing import List, Dict
-from Utils.utils import log, default_collate_fn
+from utils.utils_evaluate import log
+from utils.utils import default_collate_fn
 
 
 class AdvPatchTrainer:
@@ -26,7 +27,7 @@ class AdvPatchTrainer:
 
     def _model_forward(self, mode: str, dataloader):
         with torch.no_grad():
-            if mode == 'Classification':
+            if mode == 'classification':
                 Y, Y_hat = [], []
                 for X, y in dataloader:
                     X, y = X.to(self.device[0]), y.to(self.device[0])
@@ -34,7 +35,7 @@ class AdvPatchTrainer:
                     Y.append(y)
                     Y_hat.append(self.net2attack(X))
                 return torch.concat(Y, dim=0), torch.cat(Y_hat, dim=0)
-            elif mode == 'Detection':
+            elif mode == 'detection':
                 # record model's prediction in dataset
                 detection: List[Dict] = []
                 annotation: List[Dict] = []
@@ -55,7 +56,7 @@ class AdvPatchTrainer:
                 return annotation, detection
 
     def _train_epoch(self, epoch, train_dl, valid_dl, mode, train_watcher, f):
-        if mode == 'Classification':
+        if mode == 'classification':
             Y, Y_hat = [], []
             for idx, datas in enumerate(train_dl):
                 X, y = datas[0].to(self.device[0]), datas[1].to(self.device[0])
@@ -76,7 +77,7 @@ class AdvPatchTrainer:
 
             valid_Y, valid_Y_hat = None, None
             if valid_dl:
-                valid_Y, valid_Y_hat = self._model_forward('Classification', train_dl)
+                valid_Y, valid_Y_hat = self._model_forward('classification', train_dl)
             if train_watcher:
                 train_watcher(
                     {
@@ -87,7 +88,7 @@ class AdvPatchTrainer:
                         'valid_predictions': valid_Y_hat
                     }, f
                 )
-        elif mode == 'Detection':
+        elif mode == 'detection':
             detection: List[Dict] = []
             annotation: List[Dict] = []
             for images, targets in train_dl:
@@ -124,7 +125,7 @@ class AdvPatchTrainer:
             valid_detection = None
             valid_annotation = None
             if valid_dl:
-                valid_annotation, valid_detection = self._model_forward('Detection', valid_dl)
+                valid_annotation, valid_detection = self._model_forward('detection', valid_dl)
             if train_watcher:
                 train_watcher(
                     {
@@ -146,8 +147,8 @@ class AdvPatchTrainer:
               num_workers=1,
               train_watcher=None,
               collate_fn=None):
-        assert mode == 'Classification' or 'Detection', \
-            f'Mode should be \'Classification\' or \'Detection\', got \'{mode}\''
+        assert mode == 'classification' or 'detection', \
+            f'Mode should be \'classification\' or \'detection\', got \'{mode}\''
 
         f = open(log_filepath, 'w') if log_filepath else None
         if isinstance(self.device, str):
@@ -159,7 +160,7 @@ class AdvPatchTrainer:
                 self.net2attack = torch.nn.DataParallel(self.net2attack, device_ids=self.device)
                 self.patch_generator = self.patch_generator.to(self.device[0])
 
-        if mode == 'Detection' and collate_fn is None:
+        if mode == 'detection' and collate_fn is None:
             collate_fn = default_collate_fn
         else:
             collate_fn = None
