@@ -36,6 +36,7 @@ class AdvDetectionMetrics:
 
 
 def simple_watcher(epoch, Y, Y_hat, valid_Y, valid_Y_hat, f):
+    # on classification, compute ASR (Attack Success Rate)
     train_acc = (Y_hat.argmax(dim=1) != Y).sum().item() / Y_hat.shape[0]
     valid_acc = (valid_Y_hat.argmax(dim=1) != valid_Y).sum().item() / Y_hat.shape[0]
     log(f'epoch: {epoch} train ASR: {100 * train_acc:.1f}% valid ASR: {100 * valid_acc:.1f}%', f=f)
