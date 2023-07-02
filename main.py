@@ -20,7 +20,7 @@ class LossFunction:
 
 
 if __name__ == '__main__':
-    from models.detection.faster_rcnn.my_pretrained_faster_rcnn import fasterrcnn_mobilenet_v3_large_320_fpn_COCO
+    from models.detection.models import fasterrcnn_mobilenet_v3_large_320_fpn_COCO
 
     # print('WATCH OUT, it\'s ATTACK!')
     # train_ds, valid_ds = imagenet_1k_mini()

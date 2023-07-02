@@ -1,7 +1,7 @@
 import torch
 import torchvision
-from faster_rcnn import FasterRCNN
-from anchor_utils import AnchorGenerator
+from faster_rcnn.faster_rcnn import FasterRCNN
+from faster_rcnn.anchor_utils import AnchorGenerator
 
 
 class DummyBackbone(torch.nn.Module):

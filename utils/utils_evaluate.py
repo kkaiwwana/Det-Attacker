@@ -16,8 +16,10 @@ class AdvDetectionMetrics:
     Compute metrics on detection for adversarial patch
 
     """
-    def __init__(self):
-        raise NotImplementedError()
+    def __init__(self, dataset, pattern_projector, img_transforms):
+        self.ds = dataset
+        self.projector = pattern_projector
+        self.trans = img_transforms
 
     def _compute_mAP(self):
 
@@ -31,7 +33,7 @@ class AdvDetectionMetrics:
         # compute Average Box Number Suppress outside the patch area
         raise NotImplementedError()
 
-    def compute(self):
+    def compute(self, batch_size=16):
         raise NotImplementedError()
 
 

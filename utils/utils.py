@@ -8,6 +8,29 @@ from torchvision.utils import draw_bounding_boxes
 from torchvision import transforms
 import matplotlib.pyplot as plt
 import torchvision.transforms.functional as F
+from utils_evaluate import log
+
+
+class LossManager:
+    def __init__(self, log_loss_after_iters=10, **loss_weight_dict):
+        self.weight_dict = loss_weight_dict
+        self.log_loss_after_iters = log_loss_after_iters
+        self.iters_count = 0
+        self.mean_loss = 0
+
+    def __call__(self, loss_dict, log_file=None):
+        weighted_loss = {}
+        for key in self.weight_dict.keys():
+            weighted_loss[key] = self.weight_dict[key] * loss_dict[key]
+        loss = sum(weighted_loss.values())
+
+        self.mean_loss += loss.item()
+        self.iters_count += 1
+        if (self.iters_count + 1) % self.log_loss_after_iters == 0:
+            log(self.mean_loss / self.log_loss_after_iters, f=log_file)
+            self.mean_loss = 0
+
+        return loss
 
 
 def default_collate_fn(batch):
