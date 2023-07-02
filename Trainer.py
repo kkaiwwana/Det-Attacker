@@ -1,9 +1,7 @@
 import torch
-import torch.nn as nn
 import torch.utils.data as data
-import torchvision.models.detection
-from typing import List, Tuple, Optional, Dict
-from utils import log, default_collate_fn
+from typing import List, Dict
+from Utils.utils import log, default_collate_fn
 
 
 class AdvPatchTrainer:

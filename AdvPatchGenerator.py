@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from utils import normalize_tensor
+from Utils.utils import normalize_tensor
 
 
 class NoiseLikePatch(torch.nn.Module):

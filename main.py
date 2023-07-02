@@ -1,12 +1,9 @@
 import sys
 import torch
-import torchvision
-from torch.utils.data import dataloader
 from AdvPatchGenerator import NoiseLikePatch
-from Data import imagenet_1k_mini, coco_2017_dev_5k
-from Models.Classification.models import resnet_18
+from Data import coco_2017_dev_5k
 from Trainer import AdvPatchTrainer
-from utils import simple_watcher, PatternProjector, ToxicTargetsGenerator, log
+from Utils.utils import PatternProjector, ToxicTargetsGenerator, log
 sys.path.append('Models/Detection/FasterRCNN')
 
 

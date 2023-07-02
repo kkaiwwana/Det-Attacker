@@ -10,23 +10,6 @@ import matplotlib.pyplot as plt
 import torchvision.transforms.functional as F
 
 
-def draw_bbox_with_tensor(img: torch.Tensor, bbox: torch.Tensor, label=None):
-    # draw_bounding_boxes implemented in torchvision supports image input with dtype=uint8 only
-    # that's too annoying. so, build this wheel to relief my pain :)
-    return draw_bounding_boxes(transforms.PILToTensor()(transforms.ToPILImage()(img)), bbox, labels=label)
-
-
-def show(imgs):
-    if not isinstance(imgs, list):
-        imgs = [imgs]
-    fig, axs = plt.subplots(ncols=len(imgs), squeeze=False)
-    for i, img in enumerate(imgs):
-        img = img.detach()
-        img = F.to_pil_image(img)
-        axs[0, i].imshow(np.asarray(img))
-        axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
-
-
 def default_collate_fn(batch):
     return tuple(zip(*batch))
 
@@ -91,21 +74,6 @@ class ToxicTargetsGenerator:
 
     def __call__(self, *args, **kwargs):
         return self.transform_targets(*args, **kwargs)
-
-
-def simple_watcher(epoch, Y, Y_hat, valid_Y, valid_Y_hat, f):
-    train_acc = (Y_hat.argmax(dim=1) != Y).sum().item() / Y_hat.shape[0]
-    valid_acc = (valid_Y_hat.argmax(dim=1) != valid_Y).sum().item() / Y_hat.shape[0]
-    log(f'epoch: {epoch} train ASR: {100 * train_acc:.1f}% valid ASR: {100 * valid_acc:.1f}%', f=f)
-
-
-def log(*args, f=None):
-    # simple log, print info to console and file
-    print(args)
-    if f:
-        for item in args:
-            f.write(str(item))
-        f.write('\n')
 
 
 def normalize_tensor(x, max_value=1.0, min_value=0.0):
@@ -348,4 +316,3 @@ class PatternProjector:
 
     def __call__(self, img, pattern):
         return self.project_pattern(img, pattern)
-
