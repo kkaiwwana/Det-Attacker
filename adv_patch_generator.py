@@ -10,7 +10,7 @@ class NoiseLikePatch(torch.nn.Module):
         self.adv_patch = nn.Parameter(torch.ones((3, H_size, W_size), requires_grad=True))
 
     def forward(self, batch_size=None):
-        return self.adv_patch
+        return self.adv_patch.clamp(0, 1)
 
 
 class TpConvGenerator(nn.Module):
