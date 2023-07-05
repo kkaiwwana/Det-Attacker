@@ -12,6 +12,7 @@ from torchmetrics.detection.mean_ap import MeanAveragePrecision
 import torch.utils.data as data
 from utils import default_collate_fn
 
+
 class AdvDetectionMetrics:
     """
     Compute metrics on detection for adversarial patch
@@ -41,15 +42,16 @@ class AdvDetectionMetrics:
         # self.suppress_region is not None
         if targets[0]['boxes'].shape[0] == 0:
             return torch.tensor([])
-        not_suppress_idx = []
+        not_in_region_idxes = []
         _fl = torch.tensor([True, True, False, False], device=device)
         for target in targets:
             if len(target['boxes']) == 0:
-                not_suppress_idx.append(torch.tensor([], device=device))
                 continue
-            not_in_region_idx = ((target['boxes'] >= torch.tensor([0, 0, 202, 202.0]).to(device)) != _fl).any(dim=1)
+            not_in_region_idxes.append(
+                ((target['boxes'] >= torch.tensor([0, 0, 202, 202.0]).to(device)) != _fl).any(dim=1)
+            )
 
-        return not_in_region_idx
+        return not_in_region_idxes
 
     def compute(self, patch, dataset, test_clear_imgs=False, batch_size=16, device='cuda', num_workers=1):
 

@@ -325,6 +325,9 @@ class PatternProjector:
         else:
             posi_x, posi_y = torch.randint(0, _max_H, (1,)), torch.randint(0, _max_W, (1,))
 
+        # update attribute pattern_posi when using random_posi
+        self.pattern_posi = (posi_x, posi_y)
+
         if not batch_size:
             img_patch = img_tensor[:, posi_x: posi_x + pattern_H, posi_y: posi_y + pattern_W]
             img_tensor[:, posi_x: posi_x + pattern_H, posi_y: posi_y + pattern_W] = \
@@ -336,6 +339,7 @@ class PatternProjector:
             img_tensor[:, :, posi_x: posi_x + pattern_H, posi_y: posi_y + pattern_W] = \
                 img_patch * mask + (~mask) * (img_patch * (1 - weighted_mask) + pattern_tensor * weighted_mask)
         return img_tensor, pattern_tensor * weighted_mask
+
 
     def __call__(self, img, pattern):
         return self.project_pattern(img, pattern)
