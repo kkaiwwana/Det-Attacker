@@ -55,7 +55,7 @@ class AdvPatchTrainer:
                     detection.append(self.net2attack(images))
                 return annotation, detection
 
-    def _train_epoch(self, epoch, train_dl, valid_dl, mode, train_watcher, f):
+    def _train_epoch(self, epoch, iters_per_image, train_dl, valid_dl, mode, train_watcher, f):
         if mode == 'classification':
             Y, Y_hat = [], []
             for idx, datas in enumerate(train_dl):
@@ -92,35 +92,37 @@ class AdvPatchTrainer:
             detection: List[Dict] = []
             annotation: List[Dict] = []
             for images, targets in train_dl:
-                images = list(images)
-                pattern = self.patch_generator()
-                for i in range(len(images)):
-                    # some images in COCO are gray-scale image, convert it to RGB image
-                    images[i] = images[i].broadcast_to((3,) + images[i][0].shape).clone()
-                    # project adv pattern to img
-                    images[i] = images[i].to(self.device[0])
-                    images[i], _ = self.projector(images[i], pattern)
-                for target in targets:
-                    target['boxes'] = target['boxes'].to(self.device[0])
-                    target['labels'] = target['labels'].to(self.device[0])
-                    # some bboxes in COCO have 0 height or width, which are invalid inputs for model
-                    # we add a small positive number eps to avoid this issue
-                    target['boxes'][:, 2: 4] += 1e-2
-                    annotation.append(target)
-                self.optimizer.zero_grad()
-                self.net2attack.train()
-                toxic_targets = self.targets_generator(targets, self.device[0]) if self.targets_generator else None
-                losses_dict = self.net2attack(images, targets, toxic_targets)
-                # you should customize loss function by yourself
-                # which returns loss value (required) for patch update and log something if you want.
-                self.loss_function(losses_dict, f).backward()
-                self.optimizer.step()
-                torch.cuda.empty_cache()
-                if self.scheduler:
-                    self.scheduler.step()
-                self.net2attack.eval()
-                with torch.no_grad():
-                    detection.append(self.net2attack(images))
+                for iters in range(iters_per_image):
+                    images = list(images.clone())
+                    pattern = self.patch_generator()
+
+                    for i in range(len(images)):
+                        # some images in COCO are gray-scale image, convert it to RGB image
+                        images[i] = images[i].broadcast_to((3,) + images[i][0].shape).clone()
+                        # project adv pattern to img
+                        images[i] = images[i].to(self.device[0])
+                        images[i], _ = self.projector(images[i], pattern)
+                    for target in targets:
+                        target['boxes'] = target['boxes'].to(self.device[0])
+                        target['labels'] = target['labels'].to(self.device[0])
+                        # some bboxes in COCO have 0 height or width, which are invalid inputs for model
+                        # we add a micro positive number to avoid this issue
+                        target['boxes'][:, 2: 4] += 1e-2
+                        annotation.append(target)
+                    self.optimizer.zero_grad()
+                    self.net2attack.train()
+                    toxic_targets = self.targets_generator(targets, self.device[0]) if self.targets_generator else None
+                    losses_dict = self.net2attack(images, targets, toxic_targets)
+                    # you should customize loss function by yourself
+                    # which returns loss value (required) for patch update and log something if you want.
+                    self.loss_function(losses_dict, f).backward()
+                    self.optimizer.step()
+                    torch.cuda.empty_cache()
+                    if self.scheduler:
+                        self.scheduler.step()
+                    self.net2attack.eval()
+                    with torch.no_grad():
+                        detection.append(self.net2attack(images))
 
             valid_detection = None
             valid_annotation = None
@@ -142,6 +144,7 @@ class AdvPatchTrainer:
               train_ds: torch.utils.data.Dataset,
               batch_size,
               num_epochs,
+              iters_per_image=1,
               valid_ds=None,
               log_filepath: str = None,
               num_workers=1,
@@ -178,7 +181,7 @@ class AdvPatchTrainer:
         start_time = time.time()
 
         for epoch in range(num_epochs):
-            self._train_epoch(epoch, train_loader, valid_loader, mode, train_watcher, f)
+            self._train_epoch(epoch, iters_per_image, train_loader, valid_loader, mode, train_watcher, f)
 
             if epoch == 0:
                 log(f'The training procedure will be completed at about '
