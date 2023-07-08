@@ -101,7 +101,7 @@ class AdvPatchTrainer:
                         images[i] = images[i].broadcast_to((3,) + images[i][0].shape).clone()
                         # project adv pattern to img
                         images[i] = images[i].to(self.device[0])
-                        images[i], _ = self.projector(images[i], pattern)
+                        images[i], _, _ = self.projector(images[i], pattern)
                     for target in targets:
                         target['boxes'] = target['boxes'].to(self.device[0])
                         target['labels'] = target['labels'].to(self.device[0])

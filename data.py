@@ -55,11 +55,11 @@ class COCODataset(torch.utils.data.Dataset):
         boxes = []
         labels = []
         for i in range(num_objs):
-            xmin = coco_annotation[i]['bbox'][0]
-            ymin = coco_annotation[i]['bbox'][1]
-            xmax = xmin + coco_annotation[i]['bbox'][2]
-            ymax = ymin + coco_annotation[i]['bbox'][3]
-            boxes.append([xmin, ymin, xmax, ymax])
+            x_min = coco_annotation[i]['bbox'][0]
+            y_min = coco_annotation[i]['bbox'][1]
+            x_max = x_min + coco_annotation[i]['bbox'][2]
+            y_max = y_min + coco_annotation[i]['bbox'][3]
+            boxes.append([x_min, y_min, x_max, y_max])
             labels.append(coco_annotation[i]['category_id'])
 
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
@@ -93,11 +93,12 @@ class COCODataset(torch.utils.data.Dataset):
         boxes = []
         labels = []
         for i in range(num_objs):
-            xmin = coco_annotation[i]['bbox'][0]
-            ymin = coco_annotation[i]['bbox'][1]
-            xmax = xmin + coco_annotation[i]['bbox'][2]
-            ymax = ymin + coco_annotation[i]['bbox'][3]
-            boxes.append([xmin, ymin, xmax, ymax])
+
+            x_min = coco_annotation[i]['bbox'][0]
+            y_min = coco_annotation[i]['bbox'][1]
+            x_max = x_min + coco_annotation[i]['bbox'][2]
+            y_max = y_min + coco_annotation[i]['bbox'][3]
+            boxes.append([x_min, y_min, x_max, y_max])
             labels.append(coco_annotation[i]['category_id'])
 
         boxes = torch.as_tensor(boxes, dtype=torch.float32)

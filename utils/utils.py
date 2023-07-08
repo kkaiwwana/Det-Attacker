@@ -40,40 +40,40 @@ def default_collate_fn(batch):
 class ToxicTargetsGenerator:
     def __init__(self,
                  suppress_cats: List[int] or Tensor = None,
-                 suppress_region: List[int or float] or Tensor = None,
+                 suppress_area: List[int or float] or Tensor = None,
                  generate_cats=None,
-                 generate_region=None,
+                 generate_area=None,
                  ):
         """
         generate 'toxic' labels from real annotation(boxes, labels) as supervise signal to train adv pattern
         Args:
             suppress_cats: categories of detected objects you want to suppress, default None means suppress ALL
-            suppress_region: region of detected objects you want to suppress, default None means suppress GLOBAL
+            suppress_area: region of detected objects you want to suppress, default None means suppress GLOBAL
             generate_cats: TODO
-            generate_region: TODO
+            generate_area: TODO
         """
         if suppress_cats:
             self.suppress_cats = suppress_cats if isinstance(suppress_cats, Tensor) else torch.tensor(suppress_cats)
         else:
             self.suppress_cats = torch.tensor([])
-        if suppress_region:
-            self.suppress_region = suppress_region if isinstance(suppress_region, Tensor) else torch.tensor(
-                suppress_region)
+        if suppress_area:
+            self.suppress_area = suppress_area if isinstance(suppress_area, Tensor) else torch.tensor(
+                suppress_area)
         else:
-            self.suppress_region = torch.tensor([0, 0, torch.inf, torch.inf])
+            self.suppress_area = torch.tensor([0, 0, torch.inf, torch.inf])
         self.generate_cats = generate_cats
-        self.generate_region = generate_region
+        self.generate_area = generate_area
 
-    def _labels_not_in_region(self, targets, device) -> List[Tensor]:
+    def _labels_not_in_area(self, targets, device) -> List[Tensor]:
         # return idx of targets not in suppress region
-        # self.suppress_region is not None
+        # self.suppress_area is not None
         not_suppress_idx = []
         _fl = torch.tensor([True, True, False, False], device=device)
         for target in targets:
             if len(target['boxes']) == 0:
                 not_suppress_idx.append(torch.tensor([], device=device))
                 continue
-            not_in_region_idx = ((target['boxes'] >= self.suppress_region.to(device)) != _fl).any(dim=1)
+            not_in_region_idx = ((target['boxes'] >= self.suppress_area.to(device)) != _fl).any(dim=1)
             if len(self.suppress_cats) != 0:
                 not_suppress_label = torch.ones_like(target['labels'])
                 for i in range(len(target['labels'])):
@@ -86,7 +86,7 @@ class ToxicTargetsGenerator:
 
     def transform_targets(self, targets, device='cuda'):
         toxic_targets = []
-        not_in_region_idx = self._labels_not_in_region(targets, device)
+        not_in_region_idx = self._labels_not_in_area(targets, device)
         for idx, target in zip(not_in_region_idx, targets):
             d = {'boxes': target['boxes'][idx] if len(idx) > 0 else torch.tensor([0, 0, 1.0, 1.0], device=device),
                  'labels': target['labels'][idx] if len(idx) > 0 else torch.tensor([0], device=device),
@@ -338,7 +338,7 @@ class PatternProjector:
             img_patch = img_tensor[:, :, posi_x: posi_x + pattern_H, posi_y: posi_y + pattern_W]
             img_tensor[:, :, posi_x: posi_x + pattern_H, posi_y: posi_y + pattern_W] = \
                 img_patch * mask + (~mask) * (img_patch * (1 - weighted_mask) + pattern_tensor * weighted_mask)
-        return img_tensor, pattern_tensor * weighted_mask
+        return img_tensor, pattern_tensor * weighted_mask, (posi_x, posi_y)
 
 
     def __call__(self, img, pattern):

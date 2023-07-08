@@ -8,7 +8,10 @@ class NoiseLikePatch(torch.nn.Module):
         super().__init__()
         self.patch_H, self.patch_W = H_size, W_size
         self.adv_patch = nn.Parameter(torch.ones((3, H_size, W_size), requires_grad=True))
-
+    
+    def get_patch_size(self):
+        return self.patch_H, self.patch_W
+    
     def forward(self, batch_size=None):
         return self.adv_patch.clamp(0, 1)
 
