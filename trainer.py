@@ -1,7 +1,7 @@
 import torch
 import torch.utils.data as data
 from typing import List, Dict
-from utils.utils_evaluate import log
+from utils.evaluate_utils import log
 from utils.utils import default_collate_fn
 
 

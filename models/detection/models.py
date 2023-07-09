@@ -1,11 +1,11 @@
 import torch
 import torchvision
-from faster_rcnn.faster_rcnn import FasterRCNN
-from faster_rcnn.anchor_utils import AnchorGenerator
+from FasterRCNN.faster_rcnn import FasterRCNN
+from FasterRCNN.anchor_utils import AnchorGenerator
 
 
 class DummyBackbone(torch.nn.Module):
-    # to fool faster_rcnn class
+    # to fool FasterRCNN class
     def __init__(self, out_channels):
         super().__init__()
         self.out_channels = out_channels

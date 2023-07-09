@@ -1,14 +1,10 @@
 import torch
 import numpy as np
-import torchvision.transforms as transforms
 import PIL.Image
-from typing import Optional, List
+from typing import *
 from torch import Tensor
-from torchvision.utils import draw_bounding_boxes
 from torchvision import transforms
-import matplotlib.pyplot as plt
-import torchvision.transforms.functional as F
-from utils_evaluate import log
+from evaluate_utils import log
 
 
 class LossManager:
@@ -88,7 +84,7 @@ class ToxicTargetsGenerator:
         toxic_targets = []
         not_in_region_idx = self._labels_not_in_area(targets, device)
         for idx, target in zip(not_in_region_idx, targets):
-            d = {'boxes': target['boxes'][idx] if len(idx) > 0 else torch.tensor([0, 0, 1.0, 1.0], device=device),
+            d = {'boxes': target['boxes'][idx] if len(idx) > 0 else torch.tensor([0, 0, 1e-2, 1e-2], device=device),
                  'labels': target['labels'][idx] if len(idx) > 0 else torch.tensor([0], device=device),
                  'image_id': target['image_id']}
             toxic_targets.append(d)
@@ -339,7 +335,6 @@ class PatternProjector:
             img_tensor[:, :, posi_x: posi_x + pattern_H, posi_y: posi_y + pattern_W] = \
                 img_patch * mask + (~mask) * (img_patch * (1 - weighted_mask) + pattern_tensor * weighted_mask)
         return img_tensor, pattern_tensor * weighted_mask, (posi_x, posi_y)
-
 
     def __call__(self, img, pattern):
         return self.project_pattern(img, pattern)

@@ -4,8 +4,8 @@ from adv_patch_generator import NoiseLikePatch
 from data import coco_2017_dev_5k
 from trainer import AdvPatchTrainer
 from utils.utils import PatternProjector, ToxicTargetsGenerator
-from utils.utils_evaluate import log
-sys.path.append('models/detection/faster_rcnn')
+from utils.evaluate_utils import log
+sys.path.append('models/detection/FasterRCNN')
 
 
 class LossFunction:
