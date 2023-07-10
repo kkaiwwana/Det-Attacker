@@ -133,6 +133,7 @@ if __name__ == '__main__':
 
     net2attack.eval()
     cats = COCO(cfg.annotation_path).cats
+
     def get_str_labels(int_labels):
         str_labels = []
         if isinstance(int_labels, int):
