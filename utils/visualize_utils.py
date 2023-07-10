@@ -43,7 +43,7 @@ class DataVisualizer:
             else:
                 self.data[key] = [kwargs[key]]
 
-    def visualize(self, x_axis_key: str, y_axis_keys: list[list or str], sub_figure_size=(7, 5)):
+    def visualize(self, x_axis_key: str, y_axis_keys: List[List or str], sub_figure_size=(7, 5)):
         """
         args:
             x_axis_key: the key of data you want to plot in x-axis(horizontal-axis), string
