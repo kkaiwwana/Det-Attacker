@@ -37,7 +37,7 @@ if __name__ == '__main__':
     f.close()
 
     if cfg.if_resize:
-        img_trans = transforms.Compose([transforms.Resize(cfg.target_size), transforms.ToTensor()])
+        img_trans = transforms.Compose([transforms.Resize(cfg.target_size, antialias=True), transforms.ToTensor()])
         target_trans = ResizeGroundTruth(cfg.target_size)
     else:
         img_trans = transforms.ToTensor()
