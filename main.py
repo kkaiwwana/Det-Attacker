@@ -132,9 +132,8 @@ if __name__ == '__main__':
     torch.save(valid_metric.metrics, exp_file_dir + 'Data/valid_metrics_dict.pt')
 
     net2attack.eval()
-
+    cats = COCO(cfg.annotation_path).cats
     def get_str_labels(int_labels):
-        cats = COCO(cfg.annotation_path).cats
         str_labels = []
         if isinstance(int_labels, int):
             int_labels = [int_labels]
