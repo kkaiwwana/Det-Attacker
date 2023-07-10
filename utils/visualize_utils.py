@@ -27,7 +27,7 @@ def show(imgs):
         axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
 
 
-class TrainVisualizer:
+class DataVisualizer:
     """
     record data while training and visualize it
     """
@@ -62,7 +62,7 @@ class TrainVisualizer:
         """
         x = self.data[x_axis_key]
         sub_plots = len(y_axis_keys)
-        plt.figure(figsize=(sub_figure_size[0], sub_figure_size[1] * sub_plots))
+        plt.figure(figsize=(sub_figure_size[0], sub_figure_size[1] * sub_plots), frameon=True)
         for sub_plot_idx in range(sub_plots):
             plt.subplot(sub_plots, 1, sub_plot_idx + 1)
             if not isinstance(y_axis_keys[sub_plot_idx], list or tuple):
@@ -73,6 +73,7 @@ class TrainVisualizer:
                 legend.append(y_axis_keys[sub_plot_idx][curve_idx])
             plt.legend(legend, loc='upper left')
         plt.show()
+        return plt
 
     def reset(self):
         self.data.clear()

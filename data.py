@@ -21,9 +21,10 @@ def imagenet_1k_mini(folder_path='./datasets/imagenet-mini', train_trans=None, v
 
 
 class COCODataset(torch.utils.data.Dataset):
-    def __init__(self, root, annotation, transforms=None, min_size=(256, 256)):
+    def __init__(self, root, annotation, img_trans=None, target_trans=None, min_size=(256, 256)):
         self.root = root
-        self.transforms = transforms
+        self.img_trans = img_trans
+        self.target_trans = target_trans
         self.coco = COCO(annotation)
         self.ids = list(sorted(self.coco.imgs.keys()))
 
@@ -42,8 +43,9 @@ class COCODataset(torch.utils.data.Dataset):
         path = coco.loadImgs(img_id)[0]['file_name']
         # open the input image
         img = Image.open(os.path.join(self.root, path))
-        if self.transforms is not None:
-            img = self.transforms(img)
+        origin_size = torch.tensor(img.size)
+        if self.img_trans is not None:
+            img = self.img_trans(img)
         if img.shape[-1] < self.min_size[-1] or img.shape[-2] < self.min_size[-2]:
             return self._getitem(0)
 
@@ -64,7 +66,13 @@ class COCODataset(torch.utils.data.Dataset):
 
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
 
-        my_annotation = {"boxes": boxes, "labels": torch.tensor(labels), "image_id": torch.tensor([img_id])}
+        my_annotation = {'boxes': boxes,
+                         'labels': torch.tensor(labels),
+                         'image_id': torch.tensor([img_id]),
+                         'origin_size': origin_size}
+
+        if self.target_trans:
+            my_annotation = self.target_trans(my_annotation)
 
         return img, my_annotation
 
@@ -81,15 +89,17 @@ class COCODataset(torch.utils.data.Dataset):
         path = coco.loadImgs(img_id)[0]['file_name']
         # open the input image
         img = Image.open(os.path.join(self.root, path))
-        if self.transforms is not None:
-            img = self.transforms(img)
+        origin_size = torch.tensor(img.size)
+
+        if self.img_trans is not None:
+            img = self.img_trans(img)
 
         # number of objects in the image
         num_objs = len(coco_annotation)
 
         # Bounding boxes for objects
-        # In coco format, bbox = [xmin, ymin, width, height]
-        # In pytorch, the input should be [xmin, ymin, xmax, ymax]
+        # In coco format, bbox = [x_min, y_min, width, height]
+        # In pytorch, the input should be [x_min, y_min, x_max, y_max]
         boxes = []
         labels = []
         for i in range(num_objs):
@@ -103,7 +113,12 @@ class COCODataset(torch.utils.data.Dataset):
 
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
 
-        my_annotation = {"boxes": boxes, "labels": torch.tensor(labels), "image_id": torch.tensor([img_id])}
+        my_annotation = {'boxes': boxes,
+                         'labels': torch.tensor(labels),
+                         'image_id': torch.tensor([img_id]),
+                         'origin_size': origin_size}
+        if self.target_trans:
+            my_annotation = self.target_trans(my_annotation)
 
         return img, my_annotation
 
@@ -115,13 +130,17 @@ def coco_2017_dev_5k(
         folder_path='./datasets/COCO_dev/val2017/',
         annotation_path='./datasets/COCO_dev/annotations/instances_val2017.json',
         img_trans=None,
+        target_trans=None,
         requires_val=True,
         split_rate=None
 ):
     if requires_val and split_rate is None:
         split_rate = [0.8, 0.2]
 
-    ds = COCODataset(folder_path, annotation_path, img_trans if img_trans else transforms.ToTensor())
+    ds = COCODataset(folder_path,
+                     annotation_path,
+                     img_trans if img_trans else transforms.ToTensor(),
+                     target_trans)
 
     if requires_val:
         return random_split(ds, split_rate)

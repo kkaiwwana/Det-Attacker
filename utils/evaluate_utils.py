@@ -3,6 +3,7 @@ from typing import *
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
 import torch.utils.data as data
 from tqdm import tqdm
+from visualize_utils import DataVisualizer
 
 
 def default_collate_fn(batch):
@@ -14,11 +15,12 @@ class AdvDetectionMetrics:
     """
     Compute metrics on detection task for adversarial patch
     """
-    def __init__(self, model, pattern_projector, patch: torch.Tensor or Callable, img_transforms=None):
+    def __init__(self, model, pattern_projector, patch: torch.Tensor or Callable, img_trans=None, target_trans=None):
         self.model = model
         self.projector = pattern_projector
         self.patch = patch
-        self.trans = img_transforms
+        self.image_trans = img_trans
+        self.target_trans = target_trans
         self.metrics = {}
 
     @staticmethod
@@ -101,34 +103,56 @@ class AdvDetectionMetrics:
 
                     pbar.update(len(imgs))
 
-            print('Computing metrics. It (especially \'mAP\' items) may take few minutes.')
-            mAP_with_patch.to(device)
-            mAP_clean_image.to(device)
-            if test_clear_imgs:
-                self.metrics = {
-                    'Statistic_Info': {
-                        'num_boxes_clean_images': num_boxes_clean_images,
-                        'num_boxes_clean_images_outside_patch': num_boxes_clean_images_outside_patch,
-                        'num_boxes_with_patch': num_boxes_with_patch,
-                        'num_boxes_unsuppressed': num_boxes_unsuppressed
-                    },
-                    'Average_Boxes_Number_Increase': (num_boxes_with_patch - num_boxes_unsuppressed) / len(dataset),
-                    'Boxes_Suppression_Rate': 1 - num_boxes_unsuppressed / num_boxes_clean_images_outside_patch,
-                    'mAPs_clean_image': mAP_clean_image.compute(),
-                    'mAPs_with_patch': mAP_with_patch.compute()
-                }
-            else:
+        print('Computing metrics. It (especially \'mAP\' items) may take few minutes.')
+        mAP_with_patch.to(device)
+        mAP_clean_image.to(device)
+        if test_clear_imgs:
+            self.metrics = {
+                'Statistic_Info': {
+                    'num_boxes_clean_images': num_boxes_clean_images,
+                    'num_boxes_clean_images_outside_patch': num_boxes_clean_images_outside_patch,
+                    'num_boxes_with_patch': num_boxes_with_patch,
+                    'num_boxes_unsuppressed': num_boxes_unsuppressed
+                },
+                'Average_Boxes_Number_Increase': (num_boxes_with_patch - num_boxes_unsuppressed) / len(dataset),
+                'Boxes_Suppression_Rate': 1 - num_boxes_unsuppressed / num_boxes_clean_images_outside_patch,
+                'mAPs_clean_image': mAP_clean_image.compute(),
+                'mAPs_with_patch': mAP_with_patch.compute()
+            }
+        else:
 
-                self.metrics = {
-                    'Statistic_Info': {
-                        'num_boxes_with_patch': num_boxes_with_patch,
-                        'num_boxes_unsuppressed': num_boxes_unsuppressed
-                    },
-                    'Average_Boxes_Number_Increase': (num_boxes_with_patch - num_boxes_unsuppressed) / len(dataset),
-                    'Average_Boxes_Number_Unsuppressed': num_boxes_unsuppressed / len(dataset),
-                    'mAPs_with_patch': mAP_with_patch.compute()
-                }
-            return self.metrics
+            self.metrics = {
+                'Statistic_Info': {
+                    'num_boxes_with_patch': num_boxes_with_patch,
+                    'num_boxes_unsuppressed': num_boxes_unsuppressed
+                },
+                'Average_Boxes_Number_Increase': (num_boxes_with_patch - num_boxes_unsuppressed) / len(dataset),
+                'Average_Boxes_Number_Unsuppressed': num_boxes_unsuppressed / len(dataset),
+                'mAPs_with_patch': mAP_with_patch.compute()
+            }
+        return self.metrics
+
+
+class TrainWatcher:
+    def __init__(self):
+        self.visualizer = DataVisualizer()
+        self.train_datas = []
+        return
+
+    def __call__(self, f, train_data):
+        self.visualizer.record(**{
+            'epoch': train_data['epoch'],
+            'train_loss': train_data['mean_loss'],
+            'valid_loss': train_data['valid_mean_loss']
+        })
+        self.train_datas.append(train_data)
+
+    def save_data(self, filepath, filename):
+        torch.save(self.train_datas, filepath + filename)
+
+    def save_fig(self, filepath, filename):
+        plt = self.visualizer.visualize(x_axis_key='epoch', y_axis_keys=[['train_loss', 'valid_loss']])
+        plt.savefig(filepath + filename, format='svg')
 
 
 def simple_watcher(epoch, Y, Y_hat, valid_Y, valid_Y_hat, f):
@@ -139,7 +163,7 @@ def simple_watcher(epoch, Y, Y_hat, valid_Y, valid_Y_hat, f):
 
 
 def log(*args, f=None):
-    # simple log, print info to console and file
+    # simple log, print info to both console and file
     print(args)
     if f:
         for item in args:

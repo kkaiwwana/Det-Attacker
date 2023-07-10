@@ -4,11 +4,14 @@ from utils.utils import normalize_tensor
 
 
 class NoiseLikePatch(torch.nn.Module):
-    def __init__(self, H_size, W_size):
+    def __init__(self, H_size, W_size, init_mode='random'):
         super().__init__()
         self.patch_H, self.patch_W = H_size, W_size
-        self.adv_patch = nn.Parameter(torch.ones((3, H_size, W_size), requires_grad=True))
-    
+        if init_mode == 'random':
+            self.adv_patch = nn.Parameter(torch.rand((3, H_size, W_size), requires_grad=True))
+        elif init_mode == 'all_zero':
+            self.adv_patch = nn.Parameter(torch.zeros((3, H_size, W_size), requires_grad=True))
+
     def get_patch_size(self):
         return self.patch_H, self.patch_W
     
@@ -17,13 +20,13 @@ class NoiseLikePatch(torch.nn.Module):
 
 
 class TpConvGenerator(nn.Module):
-    def __init__(self, H_init, W_init, expand_stage=2):
+    def __init__(self, H_init, W_init, expand_stages=2):
         super().__init__()
         self.patch_H, self.patch_W = H_init, W_init
         self.latent_matrix = nn.Parameter(torch.rand(size=(3, H_init, W_init), requires_grad=True))
 
         layers = []
-        for _ in range(expand_stage):
+        for _ in range(expand_stages):
             layers.append(torch.nn.ConvTranspose2d(3, 3, kernel_size=2, stride=2))
             layers.append(nn.ReLU())
 

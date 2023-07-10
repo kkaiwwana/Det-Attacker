@@ -3,6 +3,7 @@ import torch.utils.data as data
 from typing import List, Dict
 from utils.evaluate_utils import log
 from utils.utils import default_collate_fn
+from utils.visualize_utils import DataVisualizer
 
 
 class AdvPatchTrainer:
@@ -31,7 +32,7 @@ class AdvPatchTrainer:
                 Y, Y_hat = [], []
                 for X, y in dataloader:
                     X, y = X.to(self.device[0]), y.to(self.device[0])
-                    X, _ = self.projector(X, self.patch_generator(X.shape[0]))
+                    X, _, (_, _) = self.projector(X, self.patch_generator(X.shape[0]))
                     Y.append(y)
                     Y_hat.append(self.net2attack(X))
                 return torch.concat(Y, dim=0), torch.cat(Y_hat, dim=0)
@@ -39,21 +40,27 @@ class AdvPatchTrainer:
                 # record model's prediction in dataset
                 detection: List[Dict] = []
                 annotation: List[Dict] = []
+                mean_loss: float = 0.0
                 pattern = self.patch_generator()
                 for images, targets in dataloader:
                     images = list(images)
                     for i in range(len(images)):
                         images[i] = images[i].broadcast_to((3,) + images[i][0].shape).clone()
                         images[i] = images[i].to(self.device[0])
-                        images[i], _ = self.projector(images[i], pattern)
+                        images[i], _, (_, _) = self.projector(images[i], pattern)
                     for target in targets:
                         target['boxes'] = target['boxes'].to(self.device[0])
                         target['labels'] = target['labels'].to(self.device[0])
                         target['boxes'][:, 2: 4] += 1e-2
                         annotation.append(target)
+                    self.loss_function.eval()
                     self.net2attack.eval()
                     detection.append(self.net2attack(images))
-                return annotation, detection
+                    self.net2attack.train()
+                    toxic_targets = self.targets_generator(targets, self.device[0]) if self.targets_generator else None
+                    mean_loss += self.loss_function(self.net2attack(images, targets, toxic_targets)).item()
+                    self.loss_function.train()
+                return annotation, detection, mean_loss / len(dataloader)
 
     def _train_epoch(self, epoch, iters_per_image, train_dl, valid_dl, mode, train_watcher, f):
         if mode == 'classification':
@@ -63,7 +70,7 @@ class AdvPatchTrainer:
                 # update pattern
                 self.optimizer.zero_grad()
                 pattern = self.patch_generator(X.shape[0])
-                X, masked_pattern = self.projector(X, pattern)
+                X, masked_pattern, (_, _) = self.projector(X, pattern)
                 y_hat = self.net2attack(X)
                 batch_loss = self.loss_function(y_hat, y)
 
@@ -80,20 +87,21 @@ class AdvPatchTrainer:
                 valid_Y, valid_Y_hat = self._model_forward('classification', train_dl)
             if train_watcher:
                 train_watcher(
-                    {
+                    f, {
                         'epoch': epoch,
                         'train_labels': torch.concat(Y, dim=0),
                         'train_predictions': torch.concat(Y_hat, dim=0),
                         'valid_labels': valid_Y,
                         'valid_predictions': valid_Y_hat
-                    }, f
+                    }
                 )
         elif mode == 'detection':
             detection: List[Dict] = []
             annotation: List[Dict] = []
-            for images, targets in train_dl:
+            mean_loss: float = 0.0
+            for batch_images, targets in train_dl:
                 for iters in range(iters_per_image):
-                    images = list(images.clone())
+                    images = [image.clone() for image in batch_images]
                     pattern = self.patch_generator()
 
                     for i in range(len(images)):
@@ -101,7 +109,7 @@ class AdvPatchTrainer:
                         images[i] = images[i].broadcast_to((3,) + images[i][0].shape).clone()
                         # project adv pattern to img
                         images[i] = images[i].to(self.device[0])
-                        images[i], _, _ = self.projector(images[i], pattern)
+                        images[i], _, (_, _) = self.projector(images[i], pattern)
                     for target in targets:
                         target['boxes'] = target['boxes'].to(self.device[0])
                         target['labels'] = target['labels'].to(self.device[0])
@@ -115,7 +123,9 @@ class AdvPatchTrainer:
                     losses_dict = self.net2attack(images, targets, toxic_targets)
                     # you should customize loss function by yourself
                     # which returns loss value (required) for patch update and log something if you want.
-                    self.loss_function(losses_dict, f).backward()
+                    loss = self.loss_function(losses_dict, f)
+                    loss.backward()
+                    mean_loss += loss.item()
                     self.optimizer.step()
                     torch.cuda.empty_cache()
                     if self.scheduler:
@@ -126,18 +136,19 @@ class AdvPatchTrainer:
 
             valid_detection = None
             valid_annotation = None
+            valid_mean_loss = None
             if valid_dl:
-                valid_annotation, valid_detection = self._model_forward('detection', valid_dl)
+                valid_annotation, valid_detection, valid_mean_loss = self._model_forward('detection', valid_dl)
             if train_watcher:
-                train_watcher(
-                    {
-                        'epoch': epoch,
-                        'annotation': annotation,
-                        'detection': detection,
-                        'valid_annotation': valid_annotation,
-                        'valid_detection': valid_detection
-                    }, f
-                )
+                train_watcher(f, {
+                                  'epoch': epoch,
+                                  'mean_loss': mean_loss / len(train_dl),
+                                  'annotation': annotation,
+                                  'detection': detection,
+                                  'valid_mean_loss': valid_mean_loss,
+                                  'valid_annotation': valid_annotation,
+                                  'valid_detection': valid_detection
+                              })
 
     def train(self,
               mode: str,

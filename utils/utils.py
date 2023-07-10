@@ -1,10 +1,24 @@
 import torch
 import numpy as np
 import PIL.Image
+import os
+import random
 from typing import *
 from torch import Tensor
 from torchvision import transforms
 from evaluate_utils import log
+
+
+class ResizeGroundTruth:
+    def __init__(self, target_size):
+        self.target_size = target_size
+
+    def __call__(self, target):
+        origin_size = target['origin_size']
+        sc_rate = self.target_size[0] / origin_size[0], self.target_size[1] / origin_size[1]
+        target['boxes'] *= torch.tensor([sc_rate[0], sc_rate[1], sc_rate[0], sc_rate[1]])
+
+        return target
 
 
 class LossManager:
@@ -13,6 +27,7 @@ class LossManager:
         self.log_loss_after_iters = log_loss_after_iters
         self.iters_count = 0
         self.mean_loss = 0
+        self.is_training = True
 
     def __call__(self, loss_dict, log_file=None):
         weighted_loss = {}
@@ -20,13 +35,23 @@ class LossManager:
             weighted_loss[key] = self.weight_dict[key] * loss_dict[key]
         loss = sum(weighted_loss.values())
 
+        if self.is_training is False:
+            return loss
+
         self.mean_loss += loss.item()
         self.iters_count += 1
         if (self.iters_count + 1) % self.log_loss_after_iters == 0:
-            log(self.mean_loss / self.log_loss_after_iters, f=log_file)
+            log(f'Total Iters: {self.iters_count + 1} '
+                f'Loss: {round(self.mean_loss / self.log_loss_after_iters, 3)}', f=log_file)
             self.mean_loss = 0
 
         return loss
+
+    def train(self):
+        self.is_training = True
+
+    def eval(self):
+        self.is_training = False
 
 
 def default_collate_fn(batch):
@@ -35,30 +60,31 @@ def default_collate_fn(batch):
 
 class ToxicTargetsGenerator:
     def __init__(self,
-                 suppress_cats: List[int] or Tensor = None,
+                 suppress_cats: List[int] or Tensor or str = None,
                  suppress_area: List[int or float] or Tensor = None,
-                 generate_cats=None,
-                 generate_area=None,
+                 extra_target: Dict[str, Tensor] or str = None
                  ):
         """
         generate 'toxic' labels from real annotation(boxes, labels) as supervise signal to train adv pattern
         Args:
-            suppress_cats: categories of detected objects you want to suppress, default None means suppress ALL
+            suppress_cats: categories of detected objects you want to suppress, default None means not suppress.
+                you can use string 'all' or 'none' to specify your purpose.
             suppress_area: region of detected objects you want to suppress, default None means suppress GLOBAL
-            generate_cats: TODO
-            generate_area: TODO
+
         """
         if suppress_cats:
-            self.suppress_cats = suppress_cats if isinstance(suppress_cats, Tensor) else torch.tensor(suppress_cats)
+            if isinstance(suppress_cats, str) or isinstance(suppress_cats, Tensor):
+                self.suppress_cats = suppress_cats
+            elif isinstance(suppress_cats, list):
+                self.suppress_cats = torch.tensor(suppress_cats)
         else:
             self.suppress_cats = torch.tensor([])
         if suppress_area:
-            self.suppress_area = suppress_area if isinstance(suppress_area, Tensor) else torch.tensor(
-                suppress_area)
+            self.suppress_area = suppress_area if isinstance(suppress_area, Tensor) else torch.tensor(suppress_area)
         else:
             self.suppress_area = torch.tensor([0, 0, torch.inf, torch.inf])
-        self.generate_cats = generate_cats
-        self.generate_area = generate_area
+
+        self.extra_target = extra_target
 
     def _labels_not_in_area(self, targets, device) -> List[Tensor]:
         # return idx of targets not in suppress region
@@ -70,23 +96,61 @@ class ToxicTargetsGenerator:
                 not_suppress_idx.append(torch.tensor([], device=device))
                 continue
             not_in_region_idx = ((target['boxes'] >= self.suppress_area.to(device)) != _fl).any(dim=1)
-            if len(self.suppress_cats) != 0:
+            if isinstance(self.suppress_cats, str):
+                if self.suppress_cats == 'all':
+                    not_suppress_label = torch.zeros_like(target['labels'])
+                elif self.suppress_cats == 'none':
+                    not_suppress_label = torch.ones_like(target['labels'])
+                else:
+                    assert False, 'Wrong Suppress Mode Specified.'
+            elif len(self.suppress_cats) != 0:
                 not_suppress_label = torch.ones_like(target['labels'])
                 for i in range(len(target['labels'])):
                     if target['labels'][i] in self.suppress_cats:
                         not_suppress_label[i] = 0
             else:
-                not_suppress_label = torch.zeros_like(target['labels'])
+                not_suppress_label = torch.ones_like(target['labels'])
             not_suppress_idx.append(((not_suppress_label > 0) | not_in_region_idx).nonzero().squeeze(dim=-1))
         return not_suppress_idx
 
     def transform_targets(self, targets, device='cuda'):
         toxic_targets = []
         not_in_region_idx = self._labels_not_in_area(targets, device)
+
         for idx, target in zip(not_in_region_idx, targets):
-            d = {'boxes': target['boxes'][idx] if len(idx) > 0 else torch.tensor([0, 0, 1e-2, 1e-2], device=device),
-                 'labels': target['labels'][idx] if len(idx) > 0 else torch.tensor([0], device=device),
-                 'image_id': target['image_id']}
+
+            if len(idx) > 0:
+                d = {'boxes': target['boxes'][idx], 'labels': target['labels'][idx], 'image_id': target['image_id']}
+                # print(d)
+                if self.extra_target:
+                    if isinstance(self.extra_target, str):
+                        if self.extra_target == 'global':
+                            global_box = torch.tensor([[0, 0, target['origin_size'][0], target['origin_size'][1]]])
+                            d['boxes'] = torch.concat((d['boxes'], global_box.to(device)), dim=0)
+                            d['labels'] = torch.concat((d['labels'], torch.tensor([0], device=device)), dim=0)
+                        else:
+                            assert False, 'error.'
+                    else:
+                        d['boxes'] = torch.concat((d['boxes'], self.extra_target['boxes'].to(device)), dim=0)
+                        d['labels'] = torch.concat((d['labels'], self.extra_target['labels'].to(device)), dim=0)
+            else:
+                if not self.extra_target:
+                    d = {'boxes': torch.tensor([0, 0, 1e-2, 1e-2], device=device),
+                         'labels': torch.tensor([0], device=device),
+                         'image_id': target['image_id']}
+                else:
+                    if isinstance(self.extra_target, str):
+                        global_box = torch.tensor([[0, 0, target['origin_size'][0], target['origin_size'][1]]])
+                        d = {'boxes': global_box.to(device),
+                             'labels': torch.tensor([0], device=device),
+                             'image_id': target['image_id'],
+                             'origin_size': target['origin_size']}
+                    else:
+                        d = {'boxes': self.extra_target['boxes'].to(device),
+                             'labels': self.extra_target['labels'].to(device),
+                             'image_id': target['image_id'],
+                             'origin_size': target['origin_size']}
+
             toxic_targets.append(d)
 
         return tuple(toxic_targets)
@@ -321,9 +385,6 @@ class PatternProjector:
         else:
             posi_x, posi_y = torch.randint(0, _max_H, (1,)), torch.randint(0, _max_W, (1,))
 
-        # update attribute pattern_posi when using random_posi
-        self.pattern_posi = (posi_x, posi_y)
-
         if not batch_size:
             img_patch = img_tensor[:, posi_x: posi_x + pattern_H, posi_y: posi_y + pattern_W]
             img_tensor[:, posi_x: posi_x + pattern_H, posi_y: posi_y + pattern_W] = \
@@ -338,3 +399,16 @@ class PatternProjector:
 
     def __call__(self, img, pattern):
         return self.project_pattern(img, pattern)
+
+
+def set_seed(seed: int = 42) -> None:
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    # When running on the CuDNN backend, two further options must be set
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    # Set a fixed value for the hash seed
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    print(f"Random seed set as {seed}")
