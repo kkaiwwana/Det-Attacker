@@ -1,1 +1,0 @@
-Try to reproduce outcoms months ago. Use 2 image only to train patch and expect to find it work for all images.

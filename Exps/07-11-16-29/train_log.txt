@@ -1,0 +1,91 @@
+Total Iters: 10 Loss: -0.164
+Total Iters: 20 Loss: -0.205
+Total Iters: 30 Loss: -0.24
+Total Iters: 40 Loss: -0.275
+Total Iters: 50 Loss: -0.308
+Total Iters: 60 Loss: -0.342
+Total Iters: 70 Loss: -0.393
+Total Iters: 80 Loss: -0.409
+Total Iters: 90 Loss: -0.42
+Total Iters: 100 Loss: -0.425
+Total Iters: 110 Loss: -0.812
+Total Iters: 120 Loss: -0.854
+Total Iters: 130 Loss: -0.869
+Total Iters: 140 Loss: -0.953
+Total Iters: 150 Loss: -0.947
+Total Iters: 160 Loss: -0.949
+Total Iters: 170 Loss: -0.787
+Total Iters: 180 Loss: -0.908
+Total Iters: 190 Loss: -0.876
+Total Iters: 200 Loss: -0.938
+The training procedure will be completed at about Tue Jul 11 16:34:09 2023
+
+epoch: 1  Tue Jul 11 16:32:03 2023
+Total Iters: 210 Loss: -0.589
+Total Iters: 220 Loss: -0.518
+Total Iters: 230 Loss: -0.564
+Total Iters: 240 Loss: -0.546
+Total Iters: 250 Loss: -0.569
+Total Iters: 260 Loss: -0.626
+Total Iters: 270 Loss: -0.63
+Total Iters: 280 Loss: -0.602
+Total Iters: 290 Loss: -0.64
+Total Iters: 300 Loss: -0.66
+Total Iters: 310 Loss: -1.074
+Total Iters: 320 Loss: -1.194
+Total Iters: 330 Loss: -1.192
+Total Iters: 340 Loss: -1.223
+Total Iters: 350 Loss: -1.253
+Total Iters: 360 Loss: -1.162
+Total Iters: 370 Loss: -1.03
+Total Iters: 380 Loss: -1.101
+Total Iters: 390 Loss: -0.99
+Total Iters: 400 Loss: -1.052
+epoch: 2  Tue Jul 11 16:32:42 2023
+Total Iters: 410 Loss: -1.271
+Total Iters: 420 Loss: -1.218
+Total Iters: 430 Loss: -1.36
+Total Iters: 440 Loss: -1.269
+Total Iters: 450 Loss: -1.329
+Total Iters: 460 Loss: -1.264
+Total Iters: 470 Loss: -0.994
+Total Iters: 480 Loss: -1.129
+Total Iters: 490 Loss: -1.081
+Total Iters: 500 Loss: -1.201
+Total Iters: 510 Loss: -0.846
+Total Iters: 520 Loss: -0.752
+Total Iters: 530 Loss: -0.747
+Total Iters: 540 Loss: -0.649
+Total Iters: 550 Loss: -0.706
+Total Iters: 560 Loss: -0.711
+Total Iters: 570 Loss: -0.7
+Total Iters: 580 Loss: -0.648
+Total Iters: 590 Loss: -0.706
+Total Iters: 600 Loss: -0.805
+epoch: 3  Tue Jul 11 16:33:20 2023
+Total Iters: 610 Loss: -0.729
+Total Iters: 620 Loss: -0.693
+Total Iters: 630 Loss: -0.774
+Total Iters: 640 Loss: -0.766
+Total Iters: 650 Loss: -0.76
+Total Iters: 660 Loss: -0.766
+Total Iters: 670 Loss: -0.765
+Total Iters: 680 Loss: -0.708
+Total Iters: 690 Loss: -0.61
+Total Iters: 700 Loss: -0.689
+Total Iters: 710 Loss: -1.07
+Total Iters: 720 Loss: -1.266
+Total Iters: 730 Loss: -1.318
+Total Iters: 740 Loss: -1.39
+Total Iters: 750 Loss: -1.386
+Total Iters: 760 Loss: -1.23
+Total Iters: 770 Loss: -1.265
+Total Iters: 780 Loss: -1.227
+Total Iters: 790 Loss: -1.205
+Total Iters: 800 Loss: -1.204
+epoch: 4  Tue Jul 11 16:33:57 2023
+
+
+------FINISHED TRAINING------
+
+
