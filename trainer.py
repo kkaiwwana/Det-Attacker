@@ -142,7 +142,7 @@ class AdvPatchTrainer:
             if train_watcher:
                 train_watcher(f, {
                                   'epoch': epoch,
-                                  'mean_loss': mean_loss / len(train_dl),
+                                  'mean_loss': mean_loss / len(train_dl) / iters_per_image,
                                   'annotation': annotation,
                                   'detection': detection,
                                   'valid_mean_loss': valid_mean_loss,

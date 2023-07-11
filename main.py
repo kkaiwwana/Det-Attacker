@@ -1,14 +1,12 @@
 import sys
 import os
-import torch
-import torchvision
 import random
-import torchvision.transforms as transforms
-from torchvision.utils import make_grid
-from torch.utils.data import dataloader
-from pycocotools.coco import COCO
 import config
 import pprint
+import torchvision.transforms as transforms
+from pycocotools.coco import COCO
+from shutil import copyfile
+
 
 if __name__ == '__main__':
     import config as cfg
@@ -18,8 +16,8 @@ if __name__ == '__main__':
     sys.path.append('utils')
 
     from models.detection.models import *
-    from utils.evaluate_utils import simple_watcher, AdvDetectionMetrics, TrainWatcher
-    from utils.visualize_utils import show, draw_bbox_with_tensor
+    from utils.evaluate_utils import AdvDetectionMetrics, TrainWatcher
+    from utils.visualize_utils import draw_bbox_with_tensor
     from utils.utils import PatternProjector, ToxicTargetsGenerator, log, LossManager, ResizeGroundTruth, set_seed
     from adv_patch_generator import *
     from data import coco_2017_dev_5k
@@ -32,6 +30,7 @@ if __name__ == '__main__':
     os.makedirs(exp_file_dir + 'Data', exist_ok=False)
     os.makedirs(exp_file_dir + 'Figures', exist_ok=False)
     os.makedirs(exp_file_dir + 'Figures/Examples', exist_ok=False)
+    copyfile(src=cfg.ConfigFilePath, dst=exp_file_dir + 'config.txt')
 
     f = open(cfg.ExpDirRoot + cfg.ExpName + 'description.txt', 'w')
     f.write(cfg.description)
