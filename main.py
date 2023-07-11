@@ -28,10 +28,10 @@ if __name__ == '__main__':
     set_seed(cfg.seed)
 
     exp_file_dir = cfg.ExpDirRoot + cfg.ExpName
-    os.makedirs(exp_file_dir, exist_ok=True)
-    os.makedirs(exp_file_dir + 'Data', exist_ok=True)
-    os.makedirs(exp_file_dir + 'Figures', exist_ok=True)
-    os.makedirs(exp_file_dir + 'Figures/Examples', exist_ok=True)
+    os.makedirs(exp_file_dir, exist_ok=False)
+    os.makedirs(exp_file_dir + 'Data', exist_ok=False)
+    os.makedirs(exp_file_dir + 'Figures', exist_ok=False)
+    os.makedirs(exp_file_dir + 'Figures/Examples', exist_ok=False)
 
     f = open(cfg.ExpDirRoot + cfg.ExpName + 'description.txt', 'w')
     f.write(cfg.description)
