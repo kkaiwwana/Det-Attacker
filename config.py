@@ -74,4 +74,5 @@ test_clean_image = True
 test_batch_size = 2
 
 # others
-num_imgs2show = 10
+num_imgs2show = 20
+log_loss_after_iters = 10

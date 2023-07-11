@@ -1,0 +1,367 @@
+The training procedure will be completed at about Tue Jul 11 09:25:58 2023
+
+epoch: 1  Tue Jul 11 08:43:47 2023
+epoch: 2  Tue Jul 11 08:43:54 2023
+epoch: 3  Tue Jul 11 08:44:00 2023
+epoch: 4  Tue Jul 11 08:44:07 2023
+Total Iters: 10 Loss: -0.312
+epoch: 5  Tue Jul 11 08:44:14 2023
+epoch: 6  Tue Jul 11 08:44:21 2023
+epoch: 7  Tue Jul 11 08:44:28 2023
+epoch: 8  Tue Jul 11 08:44:35 2023
+epoch: 9  Tue Jul 11 08:44:42 2023
+Total Iters: 20 Loss: -0.371
+epoch: 10  Tue Jul 11 08:44:49 2023
+epoch: 11  Tue Jul 11 08:44:55 2023
+epoch: 12  Tue Jul 11 08:45:02 2023
+epoch: 13  Tue Jul 11 08:45:09 2023
+epoch: 14  Tue Jul 11 08:45:16 2023
+Total Iters: 30 Loss: -0.54
+epoch: 15  Tue Jul 11 08:45:23 2023
+epoch: 16  Tue Jul 11 08:45:30 2023
+epoch: 17  Tue Jul 11 08:45:37 2023
+epoch: 18  Tue Jul 11 08:45:44 2023
+epoch: 19  Tue Jul 11 08:45:50 2023
+Total Iters: 40 Loss: -0.644
+epoch: 20  Tue Jul 11 08:45:58 2023
+epoch: 21  Tue Jul 11 08:46:05 2023
+epoch: 22  Tue Jul 11 08:46:12 2023
+epoch: 23  Tue Jul 11 08:46:19 2023
+epoch: 24  Tue Jul 11 08:46:26 2023
+Total Iters: 50 Loss: -0.767
+epoch: 25  Tue Jul 11 08:46:33 2023
+epoch: 26  Tue Jul 11 08:46:40 2023
+epoch: 27  Tue Jul 11 08:46:48 2023
+epoch: 28  Tue Jul 11 08:46:54 2023
+epoch: 29  Tue Jul 11 08:47:02 2023
+Total Iters: 60 Loss: -0.833
+epoch: 30  Tue Jul 11 08:47:09 2023
+epoch: 31  Tue Jul 11 08:47:16 2023
+epoch: 32  Tue Jul 11 08:47:23 2023
+epoch: 33  Tue Jul 11 08:47:30 2023
+epoch: 34  Tue Jul 11 08:47:37 2023
+Total Iters: 70 Loss: -0.872
+epoch: 35  Tue Jul 11 08:47:44 2023
+epoch: 36  Tue Jul 11 08:47:51 2023
+epoch: 37  Tue Jul 11 08:47:59 2023
+epoch: 38  Tue Jul 11 08:48:06 2023
+epoch: 39  Tue Jul 11 08:48:13 2023
+Total Iters: 80 Loss: -0.912
+epoch: 40  Tue Jul 11 08:48:19 2023
+epoch: 41  Tue Jul 11 08:48:26 2023
+epoch: 42  Tue Jul 11 08:48:33 2023
+epoch: 43  Tue Jul 11 08:48:41 2023
+epoch: 44  Tue Jul 11 08:48:48 2023
+Total Iters: 90 Loss: -0.912
+epoch: 45  Tue Jul 11 08:48:55 2023
+epoch: 46  Tue Jul 11 08:49:02 2023
+epoch: 47  Tue Jul 11 08:49:09 2023
+epoch: 48  Tue Jul 11 08:49:16 2023
+epoch: 49  Tue Jul 11 08:49:23 2023
+Total Iters: 100 Loss: -0.958
+epoch: 50  Tue Jul 11 08:49:30 2023
+epoch: 51  Tue Jul 11 08:49:38 2023
+epoch: 52  Tue Jul 11 08:49:45 2023
+epoch: 53  Tue Jul 11 08:49:52 2023
+epoch: 54  Tue Jul 11 08:49:59 2023
+Total Iters: 110 Loss: -0.864
+epoch: 55  Tue Jul 11 08:50:06 2023
+epoch: 56  Tue Jul 11 08:50:12 2023
+epoch: 57  Tue Jul 11 08:50:20 2023
+epoch: 58  Tue Jul 11 08:50:27 2023
+epoch: 59  Tue Jul 11 08:50:33 2023
+Total Iters: 120 Loss: -0.95
+epoch: 60  Tue Jul 11 08:50:40 2023
+epoch: 61  Tue Jul 11 08:50:47 2023
+epoch: 62  Tue Jul 11 08:50:54 2023
+epoch: 63  Tue Jul 11 08:51:01 2023
+epoch: 64  Tue Jul 11 08:51:08 2023
+Total Iters: 130 Loss: -1.025
+epoch: 65  Tue Jul 11 08:51:15 2023
+epoch: 66  Tue Jul 11 08:51:22 2023
+epoch: 67  Tue Jul 11 08:51:30 2023
+epoch: 68  Tue Jul 11 08:51:37 2023
+epoch: 69  Tue Jul 11 08:51:44 2023
+Total Iters: 140 Loss: -0.902
+epoch: 70  Tue Jul 11 08:51:51 2023
+epoch: 71  Tue Jul 11 08:51:58 2023
+epoch: 72  Tue Jul 11 08:52:05 2023
+epoch: 73  Tue Jul 11 08:52:12 2023
+epoch: 74  Tue Jul 11 08:52:19 2023
+Total Iters: 150 Loss: -0.965
+epoch: 75  Tue Jul 11 08:52:26 2023
+epoch: 76  Tue Jul 11 08:52:33 2023
+epoch: 77  Tue Jul 11 08:52:41 2023
+epoch: 78  Tue Jul 11 08:52:48 2023
+epoch: 79  Tue Jul 11 08:52:55 2023
+Total Iters: 160 Loss: -0.941
+epoch: 80  Tue Jul 11 08:53:02 2023
+epoch: 81  Tue Jul 11 08:53:09 2023
+epoch: 82  Tue Jul 11 08:53:16 2023
+epoch: 83  Tue Jul 11 08:53:23 2023
+epoch: 84  Tue Jul 11 08:53:30 2023
+Total Iters: 170 Loss: -0.93
+epoch: 85  Tue Jul 11 08:53:37 2023
+epoch: 86  Tue Jul 11 08:53:44 2023
+epoch: 87  Tue Jul 11 08:53:52 2023
+epoch: 88  Tue Jul 11 08:53:59 2023
+epoch: 89  Tue Jul 11 08:54:06 2023
+Total Iters: 180 Loss: -1.081
+epoch: 90  Tue Jul 11 08:54:13 2023
+epoch: 91  Tue Jul 11 08:54:20 2023
+epoch: 92  Tue Jul 11 08:54:27 2023
+epoch: 93  Tue Jul 11 08:54:34 2023
+epoch: 94  Tue Jul 11 08:54:41 2023
+Total Iters: 190 Loss: -1.001
+epoch: 95  Tue Jul 11 08:54:48 2023
+epoch: 96  Tue Jul 11 08:54:55 2023
+epoch: 97  Tue Jul 11 08:55:02 2023
+epoch: 98  Tue Jul 11 08:55:09 2023
+epoch: 99  Tue Jul 11 08:55:16 2023
+Total Iters: 200 Loss: -0.992
+epoch: 100  Tue Jul 11 08:55:23 2023
+epoch: 101  Tue Jul 11 08:55:30 2023
+epoch: 102  Tue Jul 11 08:55:37 2023
+epoch: 103  Tue Jul 11 08:55:44 2023
+epoch: 104  Tue Jul 11 08:55:51 2023
+Total Iters: 210 Loss: -0.878
+epoch: 105  Tue Jul 11 08:55:58 2023
+epoch: 106  Tue Jul 11 08:56:05 2023
+epoch: 107  Tue Jul 11 08:56:12 2023
+epoch: 108  Tue Jul 11 08:56:20 2023
+epoch: 109  Tue Jul 11 08:56:27 2023
+Total Iters: 220 Loss: -1.019
+epoch: 110  Tue Jul 11 08:56:34 2023
+epoch: 111  Tue Jul 11 08:56:42 2023
+epoch: 112  Tue Jul 11 08:56:49 2023
+epoch: 113  Tue Jul 11 08:56:56 2023
+epoch: 114  Tue Jul 11 08:57:03 2023
+Total Iters: 230 Loss: -1.0
+epoch: 115  Tue Jul 11 08:57:10 2023
+epoch: 116  Tue Jul 11 08:57:17 2023
+epoch: 117  Tue Jul 11 08:57:24 2023
+epoch: 118  Tue Jul 11 08:57:31 2023
+epoch: 119  Tue Jul 11 08:57:39 2023
+Total Iters: 240 Loss: -1.039
+epoch: 120  Tue Jul 11 08:57:46 2023
+epoch: 121  Tue Jul 11 08:57:53 2023
+epoch: 122  Tue Jul 11 08:58:00 2023
+epoch: 123  Tue Jul 11 08:58:07 2023
+epoch: 124  Tue Jul 11 08:58:14 2023
+Total Iters: 250 Loss: -0.981
+epoch: 125  Tue Jul 11 08:58:21 2023
+epoch: 126  Tue Jul 11 08:58:28 2023
+epoch: 127  Tue Jul 11 08:58:35 2023
+epoch: 128  Tue Jul 11 08:58:43 2023
+epoch: 129  Tue Jul 11 08:58:50 2023
+Total Iters: 260 Loss: -1.124
+epoch: 130  Tue Jul 11 08:58:57 2023
+epoch: 131  Tue Jul 11 08:59:04 2023
+epoch: 132  Tue Jul 11 08:59:11 2023
+epoch: 133  Tue Jul 11 08:59:19 2023
+epoch: 134  Tue Jul 11 08:59:26 2023
+Total Iters: 270 Loss: -0.89
+epoch: 135  Tue Jul 11 08:59:33 2023
+epoch: 136  Tue Jul 11 08:59:41 2023
+epoch: 137  Tue Jul 11 08:59:48 2023
+epoch: 138  Tue Jul 11 08:59:55 2023
+epoch: 139  Tue Jul 11 09:00:02 2023
+Total Iters: 280 Loss: -0.998
+epoch: 140  Tue Jul 11 09:00:09 2023
+epoch: 141  Tue Jul 11 09:00:17 2023
+epoch: 142  Tue Jul 11 09:00:24 2023
+epoch: 143  Tue Jul 11 09:00:31 2023
+epoch: 144  Tue Jul 11 09:00:39 2023
+Total Iters: 290 Loss: -0.96
+epoch: 145  Tue Jul 11 09:00:46 2023
+epoch: 146  Tue Jul 11 09:00:54 2023
+epoch: 147  Tue Jul 11 09:01:02 2023
+epoch: 148  Tue Jul 11 09:01:09 2023
+epoch: 149  Tue Jul 11 09:01:17 2023
+Total Iters: 300 Loss: -1.094
+epoch: 150  Tue Jul 11 09:01:24 2023
+epoch: 151  Tue Jul 11 09:01:31 2023
+epoch: 152  Tue Jul 11 09:01:38 2023
+epoch: 153  Tue Jul 11 09:01:45 2023
+epoch: 154  Tue Jul 11 09:01:52 2023
+Total Iters: 310 Loss: -0.904
+epoch: 155  Tue Jul 11 09:02:00 2023
+epoch: 156  Tue Jul 11 09:02:08 2023
+epoch: 157  Tue Jul 11 09:02:16 2023
+epoch: 158  Tue Jul 11 09:02:23 2023
+epoch: 159  Tue Jul 11 09:02:30 2023
+Total Iters: 320 Loss: -0.948
+epoch: 160  Tue Jul 11 09:02:37 2023
+epoch: 161  Tue Jul 11 09:02:45 2023
+epoch: 162  Tue Jul 11 09:02:52 2023
+epoch: 163  Tue Jul 11 09:02:59 2023
+epoch: 164  Tue Jul 11 09:03:06 2023
+Total Iters: 330 Loss: -1.0
+epoch: 165  Tue Jul 11 09:03:13 2023
+epoch: 166  Tue Jul 11 09:03:21 2023
+epoch: 167  Tue Jul 11 09:03:28 2023
+epoch: 168  Tue Jul 11 09:03:36 2023
+epoch: 169  Tue Jul 11 09:03:43 2023
+Total Iters: 340 Loss: -0.922
+epoch: 170  Tue Jul 11 09:03:50 2023
+epoch: 171  Tue Jul 11 09:03:58 2023
+epoch: 172  Tue Jul 11 09:04:05 2023
+epoch: 173  Tue Jul 11 09:04:13 2023
+epoch: 174  Tue Jul 11 09:04:20 2023
+Total Iters: 350 Loss: -1.073
+epoch: 175  Tue Jul 11 09:04:27 2023
+epoch: 176  Tue Jul 11 09:04:34 2023
+epoch: 177  Tue Jul 11 09:04:42 2023
+epoch: 178  Tue Jul 11 09:04:49 2023
+epoch: 179  Tue Jul 11 09:04:56 2023
+Total Iters: 360 Loss: -0.96
+epoch: 180  Tue Jul 11 09:05:03 2023
+epoch: 181  Tue Jul 11 09:05:11 2023
+epoch: 182  Tue Jul 11 09:05:18 2023
+epoch: 183  Tue Jul 11 09:05:25 2023
+epoch: 184  Tue Jul 11 09:05:32 2023
+Total Iters: 370 Loss: -0.962
+epoch: 185  Tue Jul 11 09:05:40 2023
+epoch: 186  Tue Jul 11 09:05:47 2023
+epoch: 187  Tue Jul 11 09:05:54 2023
+epoch: 188  Tue Jul 11 09:06:01 2023
+epoch: 189  Tue Jul 11 09:06:09 2023
+Total Iters: 380 Loss: -1.069
+epoch: 190  Tue Jul 11 09:06:16 2023
+epoch: 191  Tue Jul 11 09:06:23 2023
+epoch: 192  Tue Jul 11 09:06:30 2023
+epoch: 193  Tue Jul 11 09:06:38 2023
+epoch: 194  Tue Jul 11 09:06:45 2023
+Total Iters: 390 Loss: -0.872
+epoch: 195  Tue Jul 11 09:06:52 2023
+epoch: 196  Tue Jul 11 09:06:59 2023
+epoch: 197  Tue Jul 11 09:07:07 2023
+epoch: 198  Tue Jul 11 09:07:14 2023
+epoch: 199  Tue Jul 11 09:07:22 2023
+Total Iters: 400 Loss: -1.008
+epoch: 200  Tue Jul 11 09:07:29 2023
+epoch: 201  Tue Jul 11 09:07:36 2023
+epoch: 202  Tue Jul 11 09:07:44 2023
+epoch: 203  Tue Jul 11 09:07:52 2023
+epoch: 204  Tue Jul 11 09:07:59 2023
+Total Iters: 410 Loss: -0.95
+epoch: 205  Tue Jul 11 09:08:07 2023
+epoch: 206  Tue Jul 11 09:08:14 2023
+epoch: 207  Tue Jul 11 09:08:21 2023
+epoch: 208  Tue Jul 11 09:08:29 2023
+epoch: 209  Tue Jul 11 09:08:36 2023
+Total Iters: 420 Loss: -0.952
+epoch: 210  Tue Jul 11 09:08:43 2023
+epoch: 211  Tue Jul 11 09:08:50 2023
+epoch: 212  Tue Jul 11 09:08:58 2023
+epoch: 213  Tue Jul 11 09:09:05 2023
+epoch: 214  Tue Jul 11 09:09:12 2023
+Total Iters: 430 Loss: -0.956
+epoch: 215  Tue Jul 11 09:09:19 2023
+epoch: 216  Tue Jul 11 09:09:27 2023
+epoch: 217  Tue Jul 11 09:09:35 2023
+epoch: 218  Tue Jul 11 09:09:42 2023
+epoch: 219  Tue Jul 11 09:09:50 2023
+Total Iters: 440 Loss: -0.893
+epoch: 220  Tue Jul 11 09:09:57 2023
+epoch: 221  Tue Jul 11 09:10:05 2023
+epoch: 222  Tue Jul 11 09:10:13 2023
+epoch: 223  Tue Jul 11 09:10:20 2023
+epoch: 224  Tue Jul 11 09:10:28 2023
+Total Iters: 450 Loss: -1.009
+epoch: 225  Tue Jul 11 09:10:35 2023
+epoch: 226  Tue Jul 11 09:10:42 2023
+epoch: 227  Tue Jul 11 09:10:50 2023
+epoch: 228  Tue Jul 11 09:10:57 2023
+epoch: 229  Tue Jul 11 09:11:04 2023
+Total Iters: 460 Loss: -1.056
+epoch: 230  Tue Jul 11 09:11:12 2023
+epoch: 231  Tue Jul 11 09:11:19 2023
+epoch: 232  Tue Jul 11 09:11:26 2023
+epoch: 233  Tue Jul 11 09:11:34 2023
+epoch: 234  Tue Jul 11 09:11:41 2023
+Total Iters: 470 Loss: -0.873
+epoch: 235  Tue Jul 11 09:11:48 2023
+epoch: 236  Tue Jul 11 09:11:56 2023
+epoch: 237  Tue Jul 11 09:12:03 2023
+epoch: 238  Tue Jul 11 09:12:10 2023
+epoch: 239  Tue Jul 11 09:12:17 2023
+Total Iters: 480 Loss: -0.947
+epoch: 240  Tue Jul 11 09:12:25 2023
+epoch: 241  Tue Jul 11 09:12:32 2023
+epoch: 242  Tue Jul 11 09:12:39 2023
+epoch: 243  Tue Jul 11 09:12:46 2023
+epoch: 244  Tue Jul 11 09:12:53 2023
+Total Iters: 490 Loss: -0.988
+epoch: 245  Tue Jul 11 09:13:01 2023
+epoch: 246  Tue Jul 11 09:13:08 2023
+epoch: 247  Tue Jul 11 09:13:15 2023
+epoch: 248  Tue Jul 11 09:13:23 2023
+epoch: 249  Tue Jul 11 09:13:30 2023
+Total Iters: 500 Loss: -0.928
+epoch: 250  Tue Jul 11 09:13:37 2023
+epoch: 251  Tue Jul 11 09:13:44 2023
+epoch: 252  Tue Jul 11 09:13:52 2023
+epoch: 253  Tue Jul 11 09:14:00 2023
+epoch: 254  Tue Jul 11 09:14:07 2023
+Total Iters: 510 Loss: -0.928
+epoch: 255  Tue Jul 11 09:14:14 2023
+epoch: 256  Tue Jul 11 09:14:21 2023
+epoch: 257  Tue Jul 11 09:14:29 2023
+epoch: 258  Tue Jul 11 09:14:36 2023
+epoch: 259  Tue Jul 11 09:14:44 2023
+Total Iters: 520 Loss: -1.11
+epoch: 260  Tue Jul 11 09:14:51 2023
+epoch: 261  Tue Jul 11 09:14:59 2023
+epoch: 262  Tue Jul 11 09:15:06 2023
+epoch: 263  Tue Jul 11 09:15:14 2023
+epoch: 264  Tue Jul 11 09:15:21 2023
+Total Iters: 530 Loss: -0.959
+epoch: 265  Tue Jul 11 09:15:28 2023
+epoch: 266  Tue Jul 11 09:15:35 2023
+epoch: 267  Tue Jul 11 09:15:43 2023
+epoch: 268  Tue Jul 11 09:15:51 2023
+epoch: 269  Tue Jul 11 09:15:58 2023
+Total Iters: 540 Loss: -0.979
+epoch: 270  Tue Jul 11 09:16:06 2023
+epoch: 271  Tue Jul 11 09:16:13 2023
+epoch: 272  Tue Jul 11 09:16:20 2023
+epoch: 273  Tue Jul 11 09:16:28 2023
+epoch: 274  Tue Jul 11 09:16:35 2023
+Total Iters: 550 Loss: -1.022
+epoch: 275  Tue Jul 11 09:16:42 2023
+epoch: 276  Tue Jul 11 09:16:50 2023
+epoch: 277  Tue Jul 11 09:16:57 2023
+epoch: 278  Tue Jul 11 09:17:05 2023
+epoch: 279  Tue Jul 11 09:17:12 2023
+Total Iters: 560 Loss: -0.933
+epoch: 280  Tue Jul 11 09:17:20 2023
+epoch: 281  Tue Jul 11 09:17:27 2023
+epoch: 282  Tue Jul 11 09:17:34 2023
+epoch: 283  Tue Jul 11 09:17:42 2023
+epoch: 284  Tue Jul 11 09:17:49 2023
+Total Iters: 570 Loss: -1.049
+epoch: 285  Tue Jul 11 09:17:56 2023
+epoch: 286  Tue Jul 11 09:18:03 2023
+epoch: 287  Tue Jul 11 09:18:11 2023
+epoch: 288  Tue Jul 11 09:18:18 2023
+epoch: 289  Tue Jul 11 09:18:25 2023
+Total Iters: 580 Loss: -0.967
+epoch: 290  Tue Jul 11 09:18:33 2023
+epoch: 291  Tue Jul 11 09:18:40 2023
+epoch: 292  Tue Jul 11 09:18:48 2023
+epoch: 293  Tue Jul 11 09:18:55 2023
+epoch: 294  Tue Jul 11 09:19:02 2023
+Total Iters: 590 Loss: -0.968
+epoch: 295  Tue Jul 11 09:19:10 2023
+epoch: 296  Tue Jul 11 09:19:17 2023
+epoch: 297  Tue Jul 11 09:19:24 2023
+epoch: 298  Tue Jul 11 09:19:32 2023
+epoch: 299  Tue Jul 11 09:19:40 2023
+Total Iters: 600 Loss: -0.916
+epoch: 300  Tue Jul 11 09:19:47 2023
+
+
+------FINISHED TRAINING------
+
+

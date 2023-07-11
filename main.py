@@ -78,7 +78,7 @@ if __name__ == '__main__':
                                  luminance_smooth_boundary=cfg.luminance_smooth_boundary,
                                  style_converter=cfg.style_converter)
 
-    loss_func = LossManager(**cfg.loss_weight)
+    loss_func = LossManager(log_loss_after_iters=cfg.log_loss_after_iters, **cfg.loss_weight)
 
     # set None, Modify it if you need scheduler here.
     lr_scheduler = cfg.lr_scheduler
@@ -143,12 +143,12 @@ if __name__ == '__main__':
             str_labels.append(cats[int(label)]['name'])
         return str_labels
 
+    idx2show = random.randint(0, len(train_ds) + len(valid_ds) - cfg.num_imgs2show)
     for i in range(cfg.num_imgs2show):
-        idx2show = random.randint(0, len(train_ds) + len(valid_ds))
         if idx2show < len(train_ds):
-            img = train_ds[idx2show][0].to(config.device)
+            img = train_ds[idx2show + i][0].to(config.device)
         else:
-            img = valid_ds[idx2show - len(train_ds)][0].to(config.device)
+            img = valid_ds[idx2show + i - len(train_ds)][0].to(config.device)
         preds_clean_img = net2attack((img,))
         boxes_clean_img = preds_clean_img[0]['boxes']
         int_labels_clean_image = preds_clean_img[0]['labels']

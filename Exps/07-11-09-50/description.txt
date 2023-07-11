@@ -1,0 +1,1 @@
+Try to reproduce outcoms months ago. Use 2 image only to train patch and expect to find it work for all images. Fix Error in Exp 07-11-08-35 and reduce epoches.

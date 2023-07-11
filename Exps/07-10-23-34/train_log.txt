@@ -1,0 +1,47 @@
+Total Iters: 10 Loss: -0.175
+The training procedure will be completed at about Mon Jul 10 23:51:10 2023
+
+epoch: 1  Mon Jul 10 23:45:32 2023
+Total Iters: 20 Loss: -0.298
+epoch: 2  Mon Jul 10 23:45:48 2023
+Total Iters: 30 Loss: -0.345
+epoch: 3  Mon Jul 10 23:46:05 2023
+Total Iters: 40 Loss: -0.369
+epoch: 4  Mon Jul 10 23:46:21 2023
+Total Iters: 50 Loss: -0.388
+epoch: 5  Mon Jul 10 23:46:38 2023
+Total Iters: 60 Loss: -0.396
+epoch: 6  Mon Jul 10 23:46:54 2023
+Total Iters: 70 Loss: -0.404
+epoch: 7  Mon Jul 10 23:47:11 2023
+Total Iters: 80 Loss: -0.408
+epoch: 8  Mon Jul 10 23:47:27 2023
+Total Iters: 90 Loss: -0.413
+epoch: 9  Mon Jul 10 23:47:44 2023
+Total Iters: 100 Loss: -0.414
+epoch: 10  Mon Jul 10 23:48:00 2023
+Total Iters: 110 Loss: -0.417
+epoch: 11  Mon Jul 10 23:48:17 2023
+Total Iters: 120 Loss: -0.417
+epoch: 12  Mon Jul 10 23:48:33 2023
+Total Iters: 130 Loss: -0.42
+epoch: 13  Mon Jul 10 23:48:50 2023
+Total Iters: 140 Loss: -0.421
+epoch: 14  Mon Jul 10 23:49:07 2023
+Total Iters: 150 Loss: -0.42
+epoch: 15  Mon Jul 10 23:49:23 2023
+Total Iters: 160 Loss: -0.421
+epoch: 16  Mon Jul 10 23:49:39 2023
+Total Iters: 170 Loss: -0.421
+epoch: 17  Mon Jul 10 23:49:56 2023
+Total Iters: 180 Loss: -0.422
+epoch: 18  Mon Jul 10 23:50:12 2023
+Total Iters: 190 Loss: -0.423
+epoch: 19  Mon Jul 10 23:50:29 2023
+Total Iters: 200 Loss: -0.422
+epoch: 20  Mon Jul 10 23:50:46 2023
+
+
+------FINISHED TRAINING------
+
+
