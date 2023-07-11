@@ -8,6 +8,7 @@ from torchvision.utils import make_grid
 from torch.utils.data import dataloader
 from pycocotools.coco import COCO
 import config
+import pprint
 
 if __name__ == '__main__':
     import config as cfg
@@ -125,8 +126,8 @@ if __name__ == '__main__':
     valid_metric.compute(valid_ds, test_clear_imgs=cfg.test_clean_image, batch_size=cfg.test_batch_size)
 
     f = open(exp_file_dir + 'evaluation.txt', 'w')
-    f.write(f'train:\n{str(train_metric.metrics)}\n\n'
-            f'valid:\n{str(valid_metric.metrics)}')
+    f.write(f'train:\n{pprint.pformat(train_metric.metrics)}\n\n'
+            f'valid:\n{pprint.pformat(valid_metric.metrics)}')
     f.close()
     torch.save(train_metric.metrics, exp_file_dir + 'Data/train_metrics_dict.pt')
     torch.save(valid_metric.metrics, exp_file_dir + 'Data/valid_metrics_dict.pt')
