@@ -159,7 +159,7 @@ if __name__ == '__main__':
         boxes_with_patch = preds_with_patch[0]['boxes']
         int_labels_with_patch = preds_with_patch[0]['labels']
         str_labels_with_patch = get_str_labels(int_labels_with_patch)
-        example_with_patch = draw_bbox_with_tensor(img=img, bbox=boxes_clean_img, label=str_labels_clean_image)
+        example_with_patch = draw_bbox_with_tensor(img=img, bbox=boxes_with_patch, label=str_labels_with_patch)
 
         example_image = torchvision.transforms.ToPILImage()(
             torch.concat((example_image_clean, example_with_patch), dim=1)
