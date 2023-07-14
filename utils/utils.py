@@ -211,15 +211,16 @@ class LaserStyleConverter:
 
 class PatternProjector:
     def __init__(self,
-                 pattern_posi: (int, int) or (float, float) = (0, 0),
-                 random_posi=False,
-                 pattern_scale: float = 1.0,
-                 pattern_padding=0,
+                 pattern_posi: Tuple[int or float] = (0, 0),
+                 pattern_scale: Tuple[int or float] or float = 1.0,
+                 rotation_angle: Tuple[int or float] or float = None,
+                 pattern_padding: int = 0,
                  mix_rate: float = 0.8,
-                 color_brush: int or (float, float, float) = None,
+                 color_brush: int or Tuple[float, float, float] = None,
                  min_luminance: float = 0.05,
                  luminance_smooth_boundary=0.6,
-                 style_converter=None):
+                 style_converter=None,
+                 **kwargs):
         """
         Description:
         Project some pattern to an image
@@ -243,9 +244,9 @@ class PatternProjector:
                 you can customize one to convert your pattern or something to something you wanted.
                 ATTENTION, its ‘__call__‘ method MUST BE implemented.
         """
-        self.pattern_posi = pattern_posi
-        self.random_posi = random_posi
-        self.pattern_scale = pattern_scale
+        self.pattern_posi = pattern_posi if len(pattern_posi) == 4 else pattern_posi * 2
+        self.pattern_scale = pattern_scale if isinstance(pattern_scale, (tuple, list)) else (pattern_scale,) * 2
+        self.rotation_angle = rotation_angle if isinstance(rotation_angle, (tuple, list)) else (rotation_angle,) * 2
         self.pattern_padding = pattern_padding
         self.mix_rate = mix_rate
         self.color_brush = color_brush
@@ -253,6 +254,8 @@ class PatternProjector:
         self.luminance_smooth_boundary = luminance_smooth_boundary
         self.style_converter = style_converter
 
+        # arg random posi was removed, to support old version code, keep this.
+        self.random_posi = kwargs['random_posi'] if 'random_posi' in kwargs else None
     @staticmethod
     def _rgb2luminance(img_tensor):
         """
@@ -352,22 +355,31 @@ class PatternProjector:
         else:
             img_H, img_W = img_tensor.shape[1], img_tensor.shape[2]
 
+        # padding
         pattern_tensor = torch.nn.ConstantPad2d(value=0, padding=self.pattern_padding)(pattern_tensor)
-        pattern_H = int(pattern_tensor.shape[-2] * self.pattern_scale)
-        pattern_W = int(pattern_tensor.shape[-1] * self.pattern_scale)
 
+        # random rotation
+        if self.rotation_angle[0]:
+            pattern_tensor = transforms.RandomRotation(self.rotation_angle, expand=True)(pattern_tensor)
+
+        # random scale
+        scale = random.uniform(*self.pattern_scale)
+        pattern_H = int(pattern_tensor.shape[-2] * scale)
+        pattern_W = int(pattern_tensor.shape[-1] * scale)
         pattern_tensor = transforms.Resize((pattern_H, pattern_W))(pattern_tensor)
+
+        # convert style
         if self.style_converter:
             pattern_tensor = self.style_converter(pattern_tensor)
 
         # operation on luminance、mask、weighted_mask are NOT differentiable
         # so, you should detach these stuffs.
         luminance = PatternProjector._rgb2luminance(pattern_tensor).detach()
-        mask = luminance < self.min_luminance if self.min_luminance else torch.zeros_like(luminance) > 0
+        mask = luminance <= self.min_luminance if self.min_luminance != None else torch.zeros_like(luminance) > 0
         if self.luminance_smooth_boundary:
             weighted_mask = self._luminance_smooth_mask(luminance)
         else:
-            weighted_mask = torch.ones_like(luminance)
+            weighted_mask = torch.ones_like(luminance) * self.mix_rate
 
         if self.color_brush:
             pattern_tensor = self._color_brush(pattern_tensor, mask)
@@ -376,12 +388,12 @@ class PatternProjector:
         if not self.random_posi:
             if isinstance(self.pattern_posi[0], int):
                 # pixel position, e.g. (123, 456), top left corner
-                posi_x = min(self.pattern_posi[0], _max_H)
-                posi_y = min(self.pattern_posi[1], _max_W)
+                posi_x = min(random.randrange(self.pattern_posi[0], self.pattern_posi[2]), _max_H)
+                posi_y = min(random.randrange(self.pattern_posi[1], self.pattern_posi[3]), _max_W)
             else:
                 # relative position, e.g. (0.3, 0.4), top left corner
-                posi_x = min(int(img_H * self.pattern_posi[0]), _max_H)
-                posi_y = min(int(img_W * self.pattern_posi[1]), _max_W)
+                posi_x = min(int(img_H * random.uniform(self.pattern_posi[0], self.pattern_posi[2])), _max_H)
+                posi_y = min(int(img_W * random.uniform(self.pattern_posi[1], self.pattern_posi[3])), _max_W)
         else:
             posi_x, posi_y = torch.randint(0, _max_H, (1,)), torch.randint(0, _max_W, (1,))
 
@@ -395,6 +407,7 @@ class PatternProjector:
             img_patch = img_tensor[:, :, posi_x: posi_x + pattern_H, posi_y: posi_y + pattern_W]
             img_tensor[:, :, posi_x: posi_x + pattern_H, posi_y: posi_y + pattern_W] = \
                 img_patch * mask + (~mask) * (img_patch * (1 - weighted_mask) + pattern_tensor * weighted_mask)
+
         return img_tensor, pattern_tensor * weighted_mask, (posi_x, posi_y)
 
     def __call__(self, img, pattern):
