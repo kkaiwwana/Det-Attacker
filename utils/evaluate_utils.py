@@ -82,7 +82,7 @@ class AdvDetectionMetrics:
                     for img in imgs:
                         img_with_patch, _, (posi_x, posi_y) = self.projector(img.clone(), patch)
                         patch_areas.append(
-                            torch.tensor([posi_y, posi_x, patch_size[1], patch_size[0]], dtype=torch.float)
+                            torch.tensor([posi_y, posi_x, posi_y + patch_size[1], posi_x + patch_size[0]], dtype=torch.float)
                         )
                         imgs_with_patch.append(img_with_patch)
                     # model forward, get predictions

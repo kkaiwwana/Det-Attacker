@@ -28,17 +28,12 @@ class TpConvGenerator(nn.Module):
         layers = []
         for _ in range(expand_stages):
             layers.append(torch.nn.ConvTranspose2d(3, 3, kernel_size=2, stride=2))
-            layers.append(nn.ReLU())
 
         layers.append(torch.nn.Conv2d(3, 32, kernel_size=5, padding=2))
-        layers.append(nn.ReLU())
         layers.append(torch.nn.Conv2d(32, 3, kernel_size=5, padding=2))
-        layers.append(nn.ReLU())
         layers.append(nn.BatchNorm2d(3))
 
         self.cal_seq = nn.Sequential(*layers)
 
-    def forward(self, batch_size):
-        return normalize_tensor(self.cal_seq(
-            self.latent_matrix.unsqueeze(dim=0).broadcast_to((batch_size, 3, self.patch_H, self.patch_W))
-        ))
+    def forward(self, batch_size=None):
+        return self.cal_seq(self.latent_matrix.unsqueeze(dim=0))[0].clamp(0.001, 1)

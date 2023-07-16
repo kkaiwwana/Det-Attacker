@@ -64,12 +64,13 @@ if __name__ == '__main__':
     if cfg.patch_type == 'NoiseLike':
         patch_generator = NoiseLikePatch(cfg.patch_size[0], cfg.patch_size[1], init_mode=cfg.patch_init)
     elif cfg.patch_type == 'TpConv':
-        # patch_generator = TpConvGenerator(cfg.patch_size[0], cfg.patch_size[1], expand_stage=cfg.expand_stages)
-        raise NotImplementedError()
+        patch_generator = TpConvGenerator(cfg.patch_size[0], cfg.patch_size[1], expand_stages=cfg.expand_stages)
+        # raise NotImplementedError()
 
     projector = PatternProjector(pattern_posi=cfg.pattern_posi,
                                  random_posi=cfg.random_posi,
                                  pattern_scale=cfg.pattern_scale,
+                                 rotation_angle=cfg.rotation_angle,
                                  pattern_padding=cfg.pattern_padding,
                                  mix_rate=cfg.mix_rate,
                                  color_brush=cfg.color_brush,
