@@ -1,6 +1,9 @@
 import sys
 import os
 import random
+
+import torch
+
 import config
 import pprint
 import torchvision.transforms as transforms
@@ -50,22 +53,34 @@ if __name__ == '__main__':
                                                  target_trans=target_trans,
                                                  split_rate=[cfg.train_ds_size,
                                                              cfg.valid_ds_size,
-                                                             cfg.dataset_size - cfg.train_ds_size - cfg.valid_ds_size])
+                                                             cfg.dataset_size - cfg.train_ds_size - cfg.valid_ds_size],
+                                                 num_boxes_threshold=cfg.num_boxes_threshold)
     else:
-        assert False, 'Dataset Not Found/Implemented.'
+        assert False, f'dataset \'{cfg.dataset}\' not found/Implemented.'
 
     if cfg.network == 'fasterrcnn_resnet50_fpn_COCO':
         net2attack = fasterrcnn_resnet50_fpn_COCO()
     elif cfg.network == 'fasterrcnn_mobilenet_v3_large_320_fpn_COCO':
         net2attack = fasterrcnn_mobilenet_v3_large_320_fpn_COCO()
     else:
-        assert False, 'Models Not Found/Implemented.'
+        assert False, f'model \'{cfg.network}\' not found/implemented.'
 
-    if cfg.patch_type == 'NoiseLike':
+    if cfg.finetune_patch:
+        patch = torch.load(cfg.finetune_patch)
+        if isinstance(patch, torch.Tensor):
+            if cfg.patch_type == 'NoiseLike':
+                patch_generator = NoiseLikePatch(patch.shape[1], patch.shape[2], init_mode=cfg.patch_init)
+            elif cfg.patch_type == 'Conv':
+                patch_generator = ConvGenerator(patch.shape[1], patch.shape[2], init_mode=cfg.patch_init)
+            patch_generator.adv_patch = torch.nn.Parameter(patch)
+        else:
+            patch_generator = patch
+    elif cfg.patch_type == 'NoiseLike':
         patch_generator = NoiseLikePatch(cfg.patch_size[0], cfg.patch_size[1], init_mode=cfg.patch_init)
     elif cfg.patch_type == 'TpConv':
         patch_generator = TpConvGenerator(cfg.patch_size[0], cfg.patch_size[1], expand_stages=cfg.expand_stages)
-        # raise NotImplementedError()
+    else:
+        assert False, f'patch generator not found/load.'
 
     projector = PatternProjector(pattern_posi=cfg.pattern_posi,
                                  random_posi=cfg.random_posi,
@@ -87,12 +102,24 @@ if __name__ == '__main__':
         optimizer = torch.optim.Adam(
             params=patch_generator.parameters(),
             lr=cfg.lr,
-            weight_decay=cfg.weight_decay if cfg.weight_decay else 0.0)
+            weight_decay=cfg.weight_decay if cfg.weight_decay else 0.0
+        )
+    elif cfg.optimizer == 'SGD':
+        optimizer = torch.optim.SGD(
+            params=patch_generator.parameters(),
+            lr=cfg.lr,
+            momentum=cfg.momentum,
+            weight_decay=cfg.weight_decay if cfg.weight_decay else 0.0
+        )
     elif cfg.optimizer == 'FGSM':
-        # todo implement FGSM(Fast Gradient Sign Method)
-        raise NotImplementedError()
+        from utils.utils import FGSM
+        optimizer = FGSM(
+            params=patch_generator.parameters(),
+            lr=cfg.lr,
+            weight_central_decay=config.weight_decay if cfg.weight_decay else None
+        )
     else:
-        assert False, 'Optimizer Not Found/Implemented.'
+        assert False, f'optimizer {cfg.optimizer} not found/implemented.'
 
     targets_generator = ToxicTargetsGenerator(suppress_cats=cfg.suppress_cats,
                                               suppress_area=cfg.suppress_area,
@@ -116,6 +143,7 @@ if __name__ == '__main__':
                   num_workers=cfg.num_workers,
                   train_watcher=watcher)
 
+    torch.save(patch_generator, exp_file_dir + 'Data' + '/patch_generator.pt')
     torch.save(patch_generator(), exp_file_dir + 'Data' + '/patch.pt')
     watcher.save_data(filepath=exp_file_dir + 'Data', filename='/train_data.pt')
     watcher.save_fig(filepath=exp_file_dir + 'Figures', filename='/loss_curve.svg')
@@ -143,12 +171,14 @@ if __name__ == '__main__':
             str_labels.append(cats[int(label)]['name'])
         return str_labels
 
-    idx2show = random.randint(0, len(train_ds) + len(valid_ds) - cfg.num_imgs2show)
+    idx2show = random.randint(0, len(train_ds) + len(valid_ds) - cfg.num_imgs2show - 1)
+
     for i in range(cfg.num_imgs2show):
         if idx2show < len(train_ds):
             img = train_ds[idx2show + i][0].to(config.device)
         else:
             img = valid_ds[idx2show + i - len(train_ds)][0].to(config.device)
+            
         preds_clean_img = net2attack((img,))
         boxes_clean_img = preds_clean_img[0]['boxes']
         int_labels_clean_image = preds_clean_img[0]['labels']
