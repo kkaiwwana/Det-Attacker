@@ -1,11 +1,14 @@
-import pytorchyolo.utils.loss
 import torch
 import torchvision
+import torchvision.transforms as transforms
+from typing import *
+from torchvision.ops.boxes import box_convert
+from pytorchyolo.utils.loss import compute_loss
+from pytorchyolo.detect import detect_image
 from FasterRCNN.faster_rcnn import FasterRCNN
 from FasterRCNN.anchor_utils import AnchorGenerator
 from utils.utils import ResizeGroundTruth
-from typing import *
-
+from pycocotools import coco
 
 class DummyBackbone(torch.nn.Module):
     # to fool FasterRCNN class
@@ -68,30 +71,81 @@ def fasterrcnn_resnet50_fpn_COCO():
 
 
 class _FasterRCNN_Like_YOLO:
-    # TODO: Implement YOLO in pytorch
-    def __init__(self, yolo_model, input_size):
+
+    def __init__(self, yolo_model, input_size, coco_annotation_path=None):
         self.yolo_model = yolo_model
         self.input_size = input_size
+        if coco_annotation_path:
+            cats = coco.COCO(coco_annotation_path).cats
+            self.labels_frcnn2yolo = {key: i for i, key in enumerate(cats.keys())}
+            self.labels_yolo2frcnn = {i: key for i, key in enumerate(cats.keys())}
+        else:
+            self.labels_frcnn2yolo, self.labels_yolo2frcnn = None, None
 
     def _yolo_image_trans(self, imgs):
         trans = torchvision.transforms.Resize(size=self.input_size, antialias=True)
-        return torch.stack([trans(img) for img in imgs], dim=0)
+        return torch.stack([trans(img) for img in imgs], dim=0).to(imgs[0].device)
 
-    def _yolo_target_trans(self, targets):
-        yolo_target = []
+    def _yolo_target_trans(self, targets: Tuple[Dict[str, torch.Tensor]]):
+        device = targets[0]['boxes'].device
+        yolo_targets = []
         resizer = ResizeGroundTruth(self.input_size)
-        for target in targets:
+        for i, target in enumerate(targets):
             target = resizer(target)
-        raise NotImplementedError()
+            trans_target = torch.concat([
+                torch.tensor([i]).broadcast_to((target['boxes'].shape[0], 1)),
+                target['labels'].unsqueeze(dim=1).apply_(
+                    lambda x: self.labels_frcnn2yolo[x] if self.labels_frcnn2yolo else x),
+                box_convert(target['boxes'], 'xyxy', 'cxcywh')
+            ], dim=1)
+            trans_target[:, [-4, -2]] /= self.input_size[0]
+            trans_target[:, [-3, -1]] /= self.input_size[1]
 
-    def _compute_loss(self) -> Dict[str, torch.Tensor]:
-        raise NotImplementedError()
+            yolo_targets.append(trans_target)
 
-    def __call__(self, images, targets):
-        images = self._yolo_image_trans(images)
-        targets = self._yolo_target_trans(targets)
+        return torch.cat(yolo_targets, dim=0).to(device)
 
-        raise NotImplementedError()
+    def _compute_loss(self, predictions, targets, toxic_targets=None) -> Dict[str, torch.Tensor or None]:
+        _, loss_real_gt = compute_loss(
+            predictions, targets, self.yolo_model) if targets is not None else (None, [None] * 4)
+        _, loss_toxic_gt = compute_loss(
+            predictions, toxic_targets, self.yolo_model) if toxic_targets is not None else (None, [None] * 4)
+
+        print(loss_real_gt, loss_toxic_gt)
+
+        losses_dict = {
+            'loss_box_reg': loss_real_gt[0],
+            'loss_objectness': loss_real_gt[1],
+            'loss_classifier': loss_real_gt[2],
+            'atk_loss_box_reg': loss_toxic_gt[0],
+            'atk_loss_objectness': loss_toxic_gt[1],
+            'atk_loss_classifier': loss_toxic_gt[2],
+        }
+        return losses_dict
+
+    def __call__(self, images, targets=None, toxic_targets=None):
+
+        if self.yolo_model.training:
+            yolo_images = self._yolo_image_trans(images)
+            yolo_targets = self._yolo_target_trans(targets) if targets else None
+            yolo_toxic_targets = self._yolo_target_trans(toxic_targets) if toxic_targets else None
+
+            preds = self.yolo_model(yolo_images)
+
+            losses_dict = self._compute_loss(preds, yolo_targets, yolo_toxic_targets)
+            return losses_dict
+        else:
+            detects = [torch.tensor(
+                detect_image(
+                    model=self.yolo_model,
+                    image=(img * 256).to(torch.uint8).permute(1, 2, 0).numpy(),
+                    img_size=self.input_size[0])
+            ) for img in images]
+            detects = tuple(
+                {'boxes': detect[:, 0: 4],
+                 'labels': detect[:, 5].apply_(lambda x: self.labels_yolo2frcnn[x] if self.labels_yolo2frcnn else x),
+                 'scores': detect[:, 4]} for detect in detects)
+            return detects
 
     def train(self):
         self.yolo_model.train()
@@ -105,9 +159,10 @@ class _FasterRCNN_Like_YOLO:
 
 def yolo_v3(model_cfg_path='models/detection/YOLOv3/config/yolov3.cfg',
             model_weight_path='models/detection/YOLOv3/weights/yolov3.weights',
+            coco_annotation_path='datasets/COCO_dev/annotations/instances_val2017.json',
             input_size=(416, 416)):
 
     from pytorchyolo import models
     yolo_v3_model = models.load_model(model_path=model_cfg_path, weights_path=model_weight_path)
 
-    return _FasterRCNN_Like_YOLO(yolo_v3_model, input_size)
+    return _FasterRCNN_Like_YOLO(yolo_v3_model, input_size, coco_annotation_path)

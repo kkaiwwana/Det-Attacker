@@ -31,10 +31,12 @@ class LossManager:
         self.mean_loss = 0
         self.is_training = True
 
-    def __call__(self, loss_dict, log_file=None):
+    def __call__(self, loss_dict: Dict[str, Tensor or None], log_file=None):
         weighted_loss = {}
         for key in self.weight_dict.keys():
-            weighted_loss[key] = self.weight_dict[key] * loss_dict[key]
+            if key in loss_dict.keys() and loss_dict[key] is not None:
+                weighted_loss[key] = self.weight_dict[key] * loss_dict[key]
+
         loss = sum(weighted_loss.values())
 
         if self.is_training is False:
@@ -457,16 +459,16 @@ class PatternProjector:
         if not self.random_posi:
             if (torch.tensor([self.prj_params['pattern_posi']]) >= 1).any():
                 # pixel position, e.g. (123, 456), top left corner
-                posi_x = min(random.randrange(
-                    int(self.prj_params['pattern_posi'][0]), int(self.prj_params['pattern_posi'][2]) + 1), _max_H)
-                posi_y = min(random.randrange(
-                    int(self.prj_params['pattern_posi'][1]), int(self.prj_params['pattern_posi'][3]) + 1), _max_W)
+                posi_x = max(0, min(random.randrange(
+                    int(self.prj_params['pattern_posi'][0]), int(self.prj_params['pattern_posi'][2]) + 1), _max_H))
+                posi_y = max(0, min(random.randrange(
+                    int(self.prj_params['pattern_posi'][1]), int(self.prj_params['pattern_posi'][3]) + 1), _max_W))
             else:
                 # relative position, e.g. (0.3, 0.4), top left corner
-                posi_x = min(int(img_H * random.uniform(
-                    self.prj_params['pattern_posi'][0], self.prj_params['pattern_posi'][2])), _max_H)
-                posi_y = min(int(img_W * random.uniform(
-                    self.prj_params['pattern_posi'][1], self.prj_params['pattern_posi'][3])), _max_W)
+                posi_x = max(0, min(int(img_H * random.uniform(
+                    self.prj_params['pattern_posi'][0], self.prj_params['pattern_posi'][2])), _max_H))
+                posi_y = max(0, min(int(img_W * random.uniform(
+                    self.prj_params['pattern_posi'][1], self.prj_params['pattern_posi'][3])), _max_W))
         else:
             posi_x, posi_y = torch.randint(0, _max_H, (1,)), torch.randint(0, _max_W, (1,))
 

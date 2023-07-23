@@ -1,5 +1,6 @@
 datasets/
-
+models/detection/YOLOv3/weights
+TODOs.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
