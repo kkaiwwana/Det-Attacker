@@ -15,8 +15,8 @@ device = 'cuda'
 # sum of train dataset length + valid_ds_len should be less than 5,000
 dataset = 'COCO2017_val'
 dataset_size = 5000
-folder_path = '../autodl-tmp/COCO_dev/val2017/'
-annotation_path = '../autodl-tmp/COCO_dev/annotations/instances_val2017.json'
+folder_path = 'datasets/COCO_dev/val2017/'
+annotation_path = 'datasets/COCO_dev/annotations/instances_val2017.json'
 if_resize = True
 target_size = (480, 480)
 train_ds_size = 3

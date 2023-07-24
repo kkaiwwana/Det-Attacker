@@ -3,12 +3,14 @@ import torchvision
 import torchvision.transforms as transforms
 from typing import *
 from torchvision.ops.boxes import box_convert
-from pytorchyolo.utils.loss import compute_loss
-from pytorchyolo.detect import detect_image
 from FasterRCNN.faster_rcnn import FasterRCNN
 from FasterRCNN.anchor_utils import AnchorGenerator
 from utils.utils import ResizeGroundTruth
 from pycocotools import coco
+import YOLOv3.models as models
+from YOLOv3.utils.loss import compute_loss
+from YOLOv3.detect import detect_image
+
 
 class DummyBackbone(torch.nn.Module):
     # to fool FasterRCNN class
@@ -107,18 +109,18 @@ class _FasterRCNN_Like_YOLO(torch.nn.Module):
         return torch.cat(yolo_targets, dim=0).to(device)
 
     def _compute_loss(self, predictions, targets, toxic_targets=None) -> Dict[str, torch.Tensor or None]:
-        loss, loss_real_gt = compute_loss(
+        _, loss_real_gt = compute_loss(
             predictions, targets, self.yolo_model) if targets is not None else (None, [None] * 4)
-        loss_toxic, loss_toxic_gt = compute_loss(
+        _, loss_toxic_gt = compute_loss(
             predictions, toxic_targets, self.yolo_model) if toxic_targets is not None else (None, [None] * 4)
 
         losses_dict = {
-            'loss_box_reg': loss,
-            'loss_objectness': loss,
-            'loss_classifier': loss,
-            'atk_loss_box_reg': loss_toxic,
-            'atk_loss_objectness': loss_toxic,
-            'atk_loss_classifier': loss_toxic,
+            'loss_box_reg': loss_real_gt[0],
+            'loss_objectness': loss_real_gt[1],
+            'loss_classifier': loss_real_gt[2],
+            'atk_loss_box_reg': loss_toxic_gt[0],
+            'atk_loss_objectness': loss_toxic_gt[1],
+            'atk_loss_classifier': loss_toxic_gt[2],
         }
         return losses_dict
 
@@ -153,7 +155,6 @@ def yolo_v3(model_cfg_path='models/detection/YOLOv3/config/yolov3.cfg',
             coco_annotation_path='datasets/COCO_dev/annotations/instances_val2017.json',
             input_size=(416, 416)):
 
-    from pytorchyolo import models
     yolo_v3_model = models.load_model(model_path=model_cfg_path, weights_path=model_weight_path)
 
     return _FasterRCNN_Like_YOLO(yolo_v3_model, input_size, coco_annotation_path)

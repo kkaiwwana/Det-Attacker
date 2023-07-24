@@ -20,6 +20,7 @@ class NoiseLikePatch(torch.nn.Module):
 
 
 class TpConvGenerator(nn.Module):
+
     def __init__(self, H_init, W_init, expand_stages=2):
         super().__init__()
         self.patch_H, self.patch_W = H_init, W_init
