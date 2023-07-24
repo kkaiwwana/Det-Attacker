@@ -1,5 +1,3 @@
-import operator
-
 import torch
 import numpy as np
 import PIL.Image
@@ -31,12 +29,10 @@ class LossManager:
         self.mean_loss = 0
         self.is_training = True
 
-    def __call__(self, loss_dict: Dict[str, Tensor or None], log_file=None):
+    def __call__(self, loss_dict, log_file=None):
         weighted_loss = {}
         for key in self.weight_dict.keys():
-            if key in loss_dict.keys() and loss_dict[key] is not None:
-                weighted_loss[key] = self.weight_dict[key] * loss_dict[key]
-
+            weighted_loss[key] = self.weight_dict[key] * loss_dict[key]
         loss = sum(weighted_loss.values())
 
         if self.is_training is False:
@@ -224,7 +220,6 @@ class PatternProjector:
                  min_luminance: float = 0.05,
                  luminance_smooth_boundary=0.6,
                  style_converter=None,
-                 dynamic_prj_params=None,
                  **kwargs):
         """
         Description:
@@ -248,13 +243,6 @@ class PatternProjector:
             style_converter: a callable and differentiable object that convert image input to expected style.
                 you can customize one to convert your pattern or something to something you wanted.
                 ATTENTION, its ‘__call__‘ method MUST BE implemented.
-            dynamic_prj_params: a dict with items: 'strategy': '[MODE]'(required)， '[PARAM NAME]': '[Args]'
-                e.g. :
-                    d_p_dict = {
-                        'strategy': 'linear',
-                        'pattern_posi': {'increment': (0.2, -0.2, 0.1, 0.1), 'end_value': (10, 10, 20, 20)},
-                        'pattern_scale': {'increment': (-0.1, 0.2), 'end_value': (0.2, 1.8)}
-                    }
         """
         self.random_posi = False
         if isinstance(pattern_posi, str):
@@ -264,62 +252,18 @@ class PatternProjector:
             else:
                 assert False, f'unknown argument pattern_pois={pattern_posi}'
 
-        pattern_posi = pattern_posi if len(pattern_posi) == 4 else pattern_posi * 2
-        pattern_scale = pattern_scale if isinstance(pattern_scale, (tuple, list)) else (pattern_scale,) * 2
-        rotation_angle = rotation_angle if isinstance(rotation_angle, (tuple, list)) else (rotation_angle,) * 2
-        pattern_padding = pattern_padding
-        mix_rate = mix_rate if isinstance(mix_rate, (tuple, list)) else (mix_rate,) * 2
-        color_brush = color_brush
-        min_luminance = min_luminance
-        luminance_smooth_boundary = luminance_smooth_boundary
-        self.prj_params = {
-            'pattern_posi': pattern_posi,
-            'pattern_scale': pattern_scale,
-            'rotation_angle': rotation_angle,
-            'pattern_padding': pattern_padding,
-            'mix_rate': mix_rate,
-            'color_brush': color_brush,
-            'min_luminance': min_luminance,
-            'luminance_smooth_boundary': luminance_smooth_boundary
-        }
+        self.pattern_posi = pattern_posi if len(pattern_posi) == 4 else pattern_posi * 2
+        self.pattern_scale = pattern_scale if isinstance(pattern_scale, (tuple, list)) else (pattern_scale,) * 2
+        self.rotation_angle = rotation_angle if isinstance(rotation_angle, (tuple, list)) else (rotation_angle,) * 2
+        self.pattern_padding = pattern_padding
+        self.mix_rate = mix_rate if isinstance(mix_rate, (tuple, list)) else (mix_rate,) * 2
+        self.color_brush = color_brush
+        self.min_luminance = min_luminance
+        self.luminance_smooth_boundary = luminance_smooth_boundary
         self.style_converter = style_converter
-
-        self.dynamic_prj_params = dynamic_prj_params
-        self._iter_counter = 0
 
         # arg random posi was removed, to support old version code, keep this.
         self.random_posi = self.random_posi or (kwargs['random_posi'] if 'random_posi' in kwargs else False)
-
-    def _dynamic_prj_params(self):
-        def _modify_value(op):
-            if op == 'mul':
-                op = operator.mul
-            elif op == 'add':
-                op = operator.add
-
-            for param_name, increment in self.dynamic_prj_params.items():
-                if 'end_value' not in self.dynamic_prj_params[param_name].keys():
-                    self.prj_params[param_name] = \
-                        tuple([v + i for v, i in zip(self.prj_params[param_name],
-                                                     self.dynamic_prj_params[param_name]['increment'])])
-                else:
-                    self.prj_params[param_name] = \
-                        tuple([min(op(v, i), e, key=lambda x: abs(x)) for v, i, e in
-                               zip(self.prj_params[param_name],
-                                   self.dynamic_prj_params[param_name]['increment'],
-                                   self.dynamic_prj_params[param_name]['end_value'])])
-
-        self._iter_counter += 1
-        if self.dynamic_prj_params['strategy'] == 'linear':
-            _modify_value(op='add')
-
-        elif self.dynamic_prj_params['strategy'] == 'stepwise':
-            _steps = self.dynamic_prj_params['steps']
-            if self._iter_counter % _steps == 0:
-                _modify_value(op='add')
-
-        elif self.dynamic_prj_params['strategy'] == 'exponential':
-            _modify_value(op='mul')
 
     @staticmethod
     def _rgb2luminance(img_tensor):
@@ -371,19 +315,17 @@ class PatternProjector:
 
     def _color_brush(self, img_tensor, mask):
         R, G, B = 0.0, 0.0, 0.0
-        if isinstance(self.prj_params['color_brush'], tuple):
-            if isinstance(self.prj_params['color_brush'][0], int):
+        if isinstance(self.color_brush, tuple):
+            if isinstance(self.color_brush[0], int):
                 # convert int RGB to (0, 1)
-                R = self.prj_params['color_brush'][0] / 255.0
-                G = self.prj_params['color_brush'][1] / 255.0
-                B = self.prj_params['color_brush'][2] / 255.0
+                R = self.color_brush[0] / 255.0
+                G = self.color_brush[1] / 255.0
+                B = self.color_brush[2] / 255.0
             else:
-                R, G, B = self.prj_params['color_brush'][0], \
-                    self.prj_params['color_brush'][1], \
-                    self.prj_params['color_brush'][2]
+                R, G, B = self.color_brush[0], self.color_brush[1], self.color_brush[2]
         else:
             # convert wave length to RGB
-            R, G, B = PatternProjector._wavelength_to_rgb(self.prj_params['color_brush'])
+            R, G, B = PatternProjector._wavelength_to_rgb(self.color_brush)
 
         if len(img_tensor.shape) == 3:
             img_tensor = (~mask) * torch.tensor([[[R]], [[G]], [[B]]]).broadcast_to(
@@ -396,8 +338,8 @@ class PatternProjector:
 
     def _luminance_smooth_mask(self, luminance):
         norm_lumi = normalize_tensor(luminance)
-        _mask = (norm_lumi > self.prj_params['luminance_smooth_boundary'])
-        weighted_mask = (_mask + (~_mask) * luminance / self.prj_params['luminance_smooth_boundary'] + 1e-5)
+        _mask = (norm_lumi > self.luminance_smooth_boundary)
+        weighted_mask = (_mask + (~_mask) * luminance / self.luminance_smooth_boundary + 1e-5)
         return weighted_mask
 
     def project_pattern(self, img, pattern):
@@ -423,14 +365,14 @@ class PatternProjector:
             img_H, img_W = img_tensor.shape[1], img_tensor.shape[2]
 
         # padding
-        pattern_tensor = torch.nn.ConstantPad2d(value=0, padding=self.prj_params['pattern_padding'])(pattern_tensor)
+        pattern_tensor = torch.nn.ConstantPad2d(value=0, padding=self.pattern_padding)(pattern_tensor)
 
         # random rotation
-        if self.prj_params['rotation_angle'][0]:
-            pattern_tensor = transforms.RandomRotation(self.prj_params['rotation_angle'], expand=True)(pattern_tensor)
+        if self.rotation_angle[0]:
+            pattern_tensor = transforms.RandomRotation(self.rotation_angle, expand=True)(pattern_tensor)
 
         # random scale
-        scale = random.uniform(*self.prj_params['pattern_scale'])
+        scale = random.uniform(*self.pattern_scale)
         pattern_H = int(pattern_tensor.shape[-2] * scale)
         pattern_W = int(pattern_tensor.shape[-1] * scale)
         pattern_tensor = transforms.Resize((pattern_H, pattern_W))(pattern_tensor)
@@ -442,33 +384,28 @@ class PatternProjector:
         # operation on luminance、mask、weighted_mask are NOT differentiable
         # so, you should detach these stuffs.
         luminance = PatternProjector._rgb2luminance(pattern_tensor).detach()
-        mask = luminance <= self.prj_params['min_luminance'] if self.prj_params['min_luminance'] is not None \
-            else torch.zeros_like(luminance) > 0
+        mask = luminance <= self.min_luminance if self.min_luminance is not None else torch.zeros_like(luminance) > 0
 
-        mix_rate = random.uniform(*self.prj_params['mix_rate'])
+        mix_rate = random.uniform(*self.mix_rate)
 
-        if self.prj_params['luminance_smooth_boundary']:
+        if self.luminance_smooth_boundary:
             weighted_mask = self._luminance_smooth_mask(luminance) * mix_rate
         else:
             weighted_mask = torch.ones_like(luminance) * mix_rate
 
-        if self.prj_params['color_brush']:
+        if self.color_brush:
             pattern_tensor = self._color_brush(pattern_tensor, mask)
 
         _max_H, _max_W = img_H - pattern_H, img_W - pattern_W
         if not self.random_posi:
-            if (torch.tensor([self.prj_params['pattern_posi']]) >= 1).any():
+            if (torch.tensor([self.pattern_posi]) >= 1).any():
                 # pixel position, e.g. (123, 456), top left corner
-                posi_x = max(0, min(random.randrange(
-                    int(self.prj_params['pattern_posi'][0]), int(self.prj_params['pattern_posi'][2]) + 1), _max_H))
-                posi_y = max(0, min(random.randrange(
-                    int(self.prj_params['pattern_posi'][1]), int(self.prj_params['pattern_posi'][3]) + 1), _max_W))
+                posi_x = min(random.randrange(int(self.pattern_posi[0]), int(self.pattern_posi[2]) + 1), _max_H)
+                posi_y = min(random.randrange(int(self.pattern_posi[1]), int(self.pattern_posi[3]) + 1), _max_W)
             else:
                 # relative position, e.g. (0.3, 0.4), top left corner
-                posi_x = max(0, min(int(img_H * random.uniform(
-                    self.prj_params['pattern_posi'][0], self.prj_params['pattern_posi'][2])), _max_H))
-                posi_y = max(0, min(int(img_W * random.uniform(
-                    self.prj_params['pattern_posi'][1], self.prj_params['pattern_posi'][3])), _max_W))
+                posi_x = min(int(img_H * random.uniform(self.pattern_posi[0], self.pattern_posi[2])), _max_H)
+                posi_y = min(int(img_W * random.uniform(self.pattern_posi[1], self.pattern_posi[3])), _max_W)
         else:
             posi_x, posi_y = torch.randint(0, _max_H, (1,)), torch.randint(0, _max_W, (1,))
 
@@ -521,3 +458,5 @@ class FGSM:
         for param in self.params:
             if param.grad is not None:
                 param.grad.data.fill_(0.0)
+
+

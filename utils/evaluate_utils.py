@@ -11,6 +11,7 @@ def default_collate_fn(batch):
 
 
 class AdvDetectionMetrics:
+    # TODO test this class later.
     """
     Compute metrics on detection task for adversarial patch
     """
@@ -46,8 +47,6 @@ class AdvDetectionMetrics:
 
     def compute(self, dataset, test_clear_imgs=False, batch_size=16, device='cuda', num_workers=1, collate_fn=None):
 
-        num_images = len(dataset)
-
         num_boxes_with_patch = 0  # number of boxes predicted in images with patch
         num_boxes_unsuppressed = 0  # number of boxes unsuppressed in images with patch
         mAP_with_patch = MeanAveragePrecision()  # mAP values
@@ -55,8 +54,6 @@ class AdvDetectionMetrics:
         num_boxes_clean_images = 0  # number of boxes predicted in clean image
         num_boxes_clean_images_outside_patch = 0  # number of boxes predicted in clean image and outside the patch area
         mAP_clean_image = MeanAveragePrecision()  # mAP values in clean images
-
-        num_success_attack = 0
 
         self.model.to(device)
         self.model.eval()
@@ -71,8 +68,8 @@ class AdvDetectionMetrics:
             patch_areas = []
             patch = self.patch().to(device) if callable(self.patch) else self.patch.to(device)
             assert isinstance(patch, torch.Tensor) and len(patch.shape) == 3, \
-                'invalid patch. arg \'patch\' passed should be either a tensor directly or a callable tensor generator'
-
+                'Invalid patch. Arg \'patch\' passed should be either a tensor directly or a callable tensor generator'
+            
             with torch.no_grad():
                 for imgs, targets in dl:
                     # move images to device specified and synchronize channels
@@ -86,8 +83,7 @@ class AdvDetectionMetrics:
                         img_with_patch, _patch, (posi_x, posi_y) = self.projector(img.clone(), patch)
                         patch_size = _patch.shape[1:]
                         patch_areas.append(
-                            torch.tensor(
-                                [posi_y, posi_x, posi_y + patch_size[1], posi_x + patch_size[0]], dtype=torch.float)
+                            torch.tensor([posi_y, posi_x, posi_y + patch_size[1], posi_x + patch_size[0]], dtype=torch.float)
                         )
                         imgs_with_patch.append(img_with_patch)
                     # model forward, get predictions
@@ -96,21 +92,15 @@ class AdvDetectionMetrics:
                     result_with_patch = self._boxes_outside_area(preds_with_patch, patch_areas, device)
                     # accumulate statistic datas
 
-                    _boxes_with_patch = sum([idx_tensor.shape[0] for idx_tensor in result_with_patch])
-                    _boxes_unsuppressed = sum([idx_tensor.sum().item() for idx_tensor in result_with_patch])
-                    num_boxes_with_patch += _boxes_with_patch
-                    num_boxes_unsuppressed += _boxes_unsuppressed
+                    num_boxes_with_patch += sum([idx_tensor.shape[0] for idx_tensor in result_with_patch])
+                    num_boxes_unsuppressed += sum([idx_tensor.sum().item() for idx_tensor in result_with_patch])
                     # compute other stuffs when testing in clean image
                     if test_clear_imgs:
                         preds = self.model(imgs)
                         mAP_clean_image.update(preds, targets)
                         result = self._boxes_outside_area(preds, patch_areas, device)
-                        _boxes_clean_images = sum([idx_tensor.shape[0] for idx_tensor in result])
-                        _boxes_clean_images_outside_patch = sum([idx_tensor.sum().item() for idx_tensor in result])
-                        num_boxes_clean_images += _boxes_clean_images
-                        num_boxes_clean_images_outside_patch += _boxes_clean_images_outside_patch
-                        if _boxes_clean_images_outside_patch > _boxes_unsuppressed:
-                            num_success_attack += 1
+                        num_boxes_clean_images += sum([idx_tensor.shape[0] for idx_tensor in result])
+                        num_boxes_clean_images_outside_patch += sum([idx_tensor.sum().item() for idx_tensor in result])
 
                     pbar.update(len(imgs))
 
@@ -120,27 +110,24 @@ class AdvDetectionMetrics:
         if test_clear_imgs:
             self.metrics = {
                 'Statistic_Info': {
-                    'num_images': num_images,
-                    'num_success_attack': num_success_attack,
                     'num_boxes_clean_images': num_boxes_clean_images,
                     'num_boxes_clean_images_outside_patch': num_boxes_clean_images_outside_patch,
                     'num_boxes_with_patch': num_boxes_with_patch,
                     'num_boxes_unsuppressed': num_boxes_unsuppressed
                 },
-                'ASR(Attack Success Rate)': round(num_success_attack / num_images, 4),
-                'Average_Boxes_Number_Increase': round((num_boxes_with_patch - num_boxes_unsuppressed) / num_images, 4),
+                'Average_Boxes_Number_Increase': round((num_boxes_with_patch - num_boxes_unsuppressed) / len(dataset), 4),
                 'Boxes_Suppression_Rate': 1 - num_boxes_unsuppressed / num_boxes_clean_images_outside_patch,
                 'mAPs_clean_image': mAP_clean_image.compute(),
                 'mAPs_with_patch': mAP_with_patch.compute()
             }
         else:
+
             self.metrics = {
                 'Statistic_Info': {
-                    'num_images': len(dataset),
                     'num_boxes_with_patch': num_boxes_with_patch,
                     'num_boxes_unsuppressed': num_boxes_unsuppressed
                 },
-                'Average_Boxes_Number_Increase': round((num_boxes_with_patch - num_boxes_unsuppressed) / num_images, 4),
+                'Average_Boxes_Number_Increase': round((num_boxes_with_patch - num_boxes_unsuppressed) / len(dataset), 4),
                 'Average_Boxes_Number_Unsuppressed': num_boxes_unsuppressed / len(dataset),
                 'mAPs_with_patch': mAP_with_patch.compute()
             }

@@ -70,9 +70,10 @@ def fasterrcnn_resnet50_fpn_COCO():
     return my_model
 
 
-class _FasterRCNN_Like_YOLO:
+class _FasterRCNN_Like_YOLO(torch.nn.Module):
 
     def __init__(self, yolo_model, input_size, coco_annotation_path=None):
+        super().__init__()
         self.yolo_model = yolo_model
         self.input_size = input_size
         if coco_annotation_path:
@@ -93,9 +94,9 @@ class _FasterRCNN_Like_YOLO:
         for i, target in enumerate(targets):
             target = resizer(target)
             trans_target = torch.concat([
-                torch.tensor([i]).broadcast_to((target['boxes'].shape[0], 1)),
-                target['labels'].unsqueeze(dim=1).apply_(
-                    lambda x: self.labels_frcnn2yolo[x] if self.labels_frcnn2yolo else x),
+                torch.tensor([i], device=device, requires_grad=False).broadcast_to((target['boxes'].shape[0], 1)),
+                target['labels'].unsqueeze(dim=1).cpu().apply_(
+                    lambda x: self.labels_frcnn2yolo[x] if self.labels_frcnn2yolo else x).to(device).to(torch.int),
                 box_convert(target['boxes'], 'xyxy', 'cxcywh')
             ], dim=1)
             trans_target[:, [-4, -2]] /= self.input_size[0]
@@ -106,25 +107,23 @@ class _FasterRCNN_Like_YOLO:
         return torch.cat(yolo_targets, dim=0).to(device)
 
     def _compute_loss(self, predictions, targets, toxic_targets=None) -> Dict[str, torch.Tensor or None]:
-        _, loss_real_gt = compute_loss(
+        loss, loss_real_gt = compute_loss(
             predictions, targets, self.yolo_model) if targets is not None else (None, [None] * 4)
-        _, loss_toxic_gt = compute_loss(
+        loss_toxic, loss_toxic_gt = compute_loss(
             predictions, toxic_targets, self.yolo_model) if toxic_targets is not None else (None, [None] * 4)
 
-        print(loss_real_gt, loss_toxic_gt)
-
         losses_dict = {
-            'loss_box_reg': loss_real_gt[0],
-            'loss_objectness': loss_real_gt[1],
-            'loss_classifier': loss_real_gt[2],
-            'atk_loss_box_reg': loss_toxic_gt[0],
-            'atk_loss_objectness': loss_toxic_gt[1],
-            'atk_loss_classifier': loss_toxic_gt[2],
+            'loss_box_reg': loss,
+            'loss_objectness': loss,
+            'loss_classifier': loss,
+            'atk_loss_box_reg': loss_toxic,
+            'atk_loss_objectness': loss_toxic,
+            'atk_loss_classifier': loss_toxic,
         }
         return losses_dict
 
     def __call__(self, images, targets=None, toxic_targets=None):
-
+        device = images[0].device
         if self.yolo_model.training:
             yolo_images = self._yolo_image_trans(images)
             yolo_targets = self._yolo_target_trans(targets) if targets else None
@@ -138,23 +137,15 @@ class _FasterRCNN_Like_YOLO:
             detects = [torch.tensor(
                 detect_image(
                     model=self.yolo_model,
-                    image=(img * 256).to(torch.uint8).permute(1, 2, 0).numpy(),
-                    img_size=self.input_size[0])
+                    image=(img * 256).to(torch.uint8).permute(1, 2, 0).cpu().numpy(),
+                    img_size=self.input_size[0]),
+                device=device
             ) for img in images]
             detects = tuple(
                 {'boxes': detect[:, 0: 4],
-                 'labels': detect[:, 5].apply_(lambda x: self.labels_yolo2frcnn[x] if self.labels_yolo2frcnn else x),
+                 'labels': detect[:, 5].cpu().apply_(lambda x: self.labels_yolo2frcnn[x] if self.labels_yolo2frcnn else x).to(device).to(torch.int),
                  'scores': detect[:, 4]} for detect in detects)
             return detects
-
-    def train(self):
-        self.yolo_model.train()
-
-    def eval(self):
-        self.yolo_model.eval()
-
-    def to(self, device):
-        self.yolo_model.to(device)
 
 
 def yolo_v3(model_cfg_path='models/detection/YOLOv3/config/yolov3.cfg',

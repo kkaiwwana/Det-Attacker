@@ -1,7 +1,9 @@
 import sys
 import os
 import random
+
 import torch
+
 import config
 import pprint
 import torchvision.transforms as transforms
@@ -60,14 +62,10 @@ if __name__ == '__main__':
         net2attack = fasterrcnn_resnet50_fpn_COCO()
     elif cfg.network == 'fasterrcnn_mobilenet_v3_large_320_fpn_COCO':
         net2attack = fasterrcnn_mobilenet_v3_large_320_fpn_COCO()
-    elif cfg.network == 'yolov3':
-        net2attack = yolo_v3(model_cfg_path=cfg.yolo_config_path,
-                             model_weight_path=cfg.yolo_weight_path,
-                             coco_annotation_path=cfg.annotation_path)
     else:
         assert False, f'model \'{cfg.network}\' not found/implemented.'
 
-    if cfg.if_finetune and cfg.finetune_patch:
+    if cfg.finetune_patch:
         patch = torch.load(cfg.finetune_patch)
         if isinstance(patch, torch.Tensor):
             if cfg.patch_type == 'NoiseLike':
@@ -93,8 +91,7 @@ if __name__ == '__main__':
                                  color_brush=cfg.color_brush,
                                  min_luminance=cfg.min_luminance,
                                  luminance_smooth_boundary=cfg.luminance_smooth_boundary,
-                                 style_converter=cfg.style_converter,
-                                 dynamic_prj_params=cfg.dynamic_prj_params if cfg.enable_dynamic_prj_params else None)
+                                 style_converter=cfg.style_converter)
 
     loss_func = LossManager(log_loss_after_iters=cfg.log_loss_after_iters, **cfg.loss_weight)
 
