@@ -9,18 +9,18 @@ class NoiseLikePatch(torch.nn.Module):
         self.patch_H, self.patch_W = H_size, W_size
         if init_mode == 'random':
             self.adv_patch = nn.Parameter(torch.rand((3, H_size, W_size), requires_grad=True))
-        elif init_mode == 'all_zero':
+        elif init_mode == 'all_zeros':
             self.adv_patch = nn.Parameter(torch.zeros((3, H_size, W_size), requires_grad=True))
-
-    def get_patch_size(self):
-        return self.patch_H, self.patch_W
+        elif init_mode == 'all_ones':
+            self.adv_patch = nn.Parameter(torch.ones((3, H_size, W_size), requires_grad=True))
+        else:
+            assert False, 'unknown init mode passed.'
     
     def forward(self, batch_size=None):
-        return self.adv_patch.clamp(0.001, 1)
+        return self.adv_patch.clamp(0.0001, 1)
 
 
 class TpConvGenerator(nn.Module):
-
     def __init__(self, H_init, W_init, expand_stages=2):
         super().__init__()
         self.patch_H, self.patch_W = H_init, W_init
@@ -30,16 +30,7 @@ class TpConvGenerator(nn.Module):
             layers.append(torch.nn.ConvTranspose2d(3, 3, kernel_size=2, stride=2))
 
         layers.append(torch.nn.Conv2d(3, 32, kernel_size=5, padding=2))
-        # layers.append(torch.nn.Conv2d(32, 32, kernel_size=5, padding=2))
         layers.append(torch.nn.Conv2d(32, 3, kernel_size=5, padding=2))
-        # layers.append(torch.nn.Conv2d(3, 32, kernel_size=3, padding=1))
-        # layers.append(torch.nn.ReLU())
-        # layers.append(torch.nn.Conv2d(32, 64, kernel_size=3, padding=1))
-        # layers.append(torch.nn.ReLU())
-        # layers.append(torch.nn.Conv2d(64, 32, kernel_size=3, padding=1))
-        # layers.append(torch.nn.ReLU())
-        # layers.append(torch.nn.Conv2d(32, 3, kernel_size=3, padding=1))
-        # layers.append(torch.nn.ReLU())
         layers.append(nn.BatchNorm2d(3))
 
         self.cal_seq = nn.Sequential(*layers)

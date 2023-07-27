@@ -1,9 +1,7 @@
 import sys
 import os
 import random
-
 import torch
-
 import config
 import pprint
 import torchvision.transforms as transforms
@@ -54,7 +52,8 @@ if __name__ == '__main__':
                                                  split_rate=[cfg.train_ds_size,
                                                              cfg.valid_ds_size,
                                                              cfg.dataset_size - cfg.train_ds_size - cfg.valid_ds_size],
-                                                 num_boxes_threshold=cfg.num_boxes_threshold)
+                                                 # data remained doesn't require a selector, set None 
+                                                 data_selectors=cfg.data_selectors + [None])
     else:
         assert False, f'dataset \'{cfg.dataset}\' not found/Implemented.'
 
@@ -62,10 +61,15 @@ if __name__ == '__main__':
         net2attack = fasterrcnn_resnet50_fpn_COCO()
     elif cfg.network == 'fasterrcnn_mobilenet_v3_large_320_fpn_COCO':
         net2attack = fasterrcnn_mobilenet_v3_large_320_fpn_COCO()
+    elif cfg.network == 'yolov3':
+        net2attack = yolo_v3(model_cfg_path=cfg.yolo_config_path,
+                             model_weight_path=cfg.yolo_weight_path,
+                             coco_annotation_path=cfg.annotation_path,
+                             input_size=cfg.yolo_input_size)
     else:
         assert False, f'model \'{cfg.network}\' not found/implemented.'
 
-    if cfg.finetune_patch:
+    if cfg.if_finetune and cfg.finetune_patch:
         patch = torch.load(cfg.finetune_patch)
         if isinstance(patch, torch.Tensor):
             if cfg.patch_type == 'NoiseLike':
@@ -91,9 +95,13 @@ if __name__ == '__main__':
                                  color_brush=cfg.color_brush,
                                  min_luminance=cfg.min_luminance,
                                  luminance_smooth_boundary=cfg.luminance_smooth_boundary,
-                                 style_converter=cfg.style_converter)
+                                 style_converter=cfg.style_converter,
+                                 dynamic_prj_params=cfg.dynamic_prj_params if cfg.enable_dynamic_prj_params else None)
 
-    loss_func = LossManager(log_loss_after_iters=cfg.log_loss_after_iters, **cfg.loss_weight)
+    if cfg.network != 'yolov3':
+        loss_func = LossManager(log_loss_after_iters=cfg.log_loss_after_iters, **cfg.loss_weight)
+    else:
+        loss_func = LossManager(log_loss_after_iters=cfg.log_loss_after_iters, **cfg.yolo_loss_weight)
 
     # set None, Modify it if you need scheduler here.
     lr_scheduler = cfg.lr_scheduler
@@ -171,13 +179,17 @@ if __name__ == '__main__':
             str_labels.append(cats[int(label)]['name'])
         return str_labels
 
-    idx2show = random.randint(0, len(train_ds) + len(valid_ds) - cfg.num_imgs2show - 1)
+    idx2show = random.randint(0, len(train_ds) + len(valid_ds) - cfg.num_imgs2show)
 
     for i in range(cfg.num_imgs2show):
-        if idx2show < len(train_ds):
+        if idx2show + i < len(train_ds):
             img = train_ds[idx2show + i][0].to(config.device)
         else:
             img = valid_ds[idx2show + i - len(train_ds)][0].to(config.device)
+        
+        # check channels
+        if img.shape[0] == 1:
+            img = img.broadcast_to(3, -1, -1)
             
         preds_clean_img = net2attack((img,))
         boxes_clean_img = preds_clean_img[0]['boxes']
