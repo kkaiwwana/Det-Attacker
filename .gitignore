@@ -1,6 +1,8 @@
 datasets/
 models/detection/YOLOv3/weights
 TODOs.txt
+test_patch.ipynb
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
