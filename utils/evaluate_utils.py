@@ -83,7 +83,7 @@ class AdvDetectionMetrics:
                     # project adv patch to a copy of origin images
                     imgs_with_patch = []
                     for img in imgs:
-                        img_with_patch, _patch, (posi_x, posi_y) = self.projector(img.clone(), patch)
+                        img_with_patch, _patch, (posi_x, posi_y) = self.projector(img.clone(), patch.clone())
                         patch_size = _patch.shape[1:]
                         patch_areas.append(
                             torch.tensor(
@@ -102,7 +102,7 @@ class AdvDetectionMetrics:
                     num_boxes_unsuppressed += _boxes_unsuppressed
                     # compute other stuffs when testing in clean image
                     if test_clear_imgs:
-                        preds = self.model(imgs)
+                        preds = self.model(tuple(img.clone() for img in imgs))
                         mAP_clean_image.update(preds, targets)
                         result = self._boxes_outside_area(preds, patch_areas, device)
                         _boxes_clean_images = sum([idx_tensor.shape[0] for idx_tensor in result])

@@ -72,7 +72,7 @@ class COCODataset(torch.utils.data.Dataset):
         my_annotation = {'boxes': boxes,
                          'labels': torch.tensor(labels),
                          'image_id': torch.tensor([img_id]),
-                         'origin_size': origin_size}
+                         'origin_size': [origin_size]}
 
         if self.target_trans:
             my_annotation = self.target_trans(my_annotation)
@@ -119,7 +119,7 @@ class COCODataset(torch.utils.data.Dataset):
         my_annotation = {'boxes': boxes,
                          'labels': torch.tensor(labels),
                          'image_id': torch.tensor([img_id]),
-                         'origin_size': origin_size}
+                         'origin_size': [origin_size]}
         if self.target_trans:
             my_annotation = self.target_trans(my_annotation)
 

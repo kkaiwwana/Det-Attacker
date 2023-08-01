@@ -17,9 +17,10 @@ class ResizeGroundTruth:
 
     def __call__(self, target):
         device = target['boxes'].device
-        origin_size = target['origin_size']
+        origin_size = target['origin_size'][-1]
         sc_rate = self.target_size[0] / origin_size[0], self.target_size[1] / origin_size[1]
         target['boxes'] *= torch.tensor([sc_rate[0], sc_rate[1], sc_rate[0], sc_rate[1]], device=device)
+        target['origin_size'].append(torch.tensor(self.target_size))
 
         return target
 
@@ -125,40 +126,42 @@ class ToxicTargetsGenerator:
         for idx, target in zip(not_in_region_idx, targets):
 
             if len(idx) > 0:
-                d = {'boxes': target['boxes'][idx], 'labels': target['labels'][idx], 'image_id': target['image_id']}
-                # print(d)
+                d = {'boxes': target['boxes'][idx].clone(), 
+                     'labels': target['labels'][idx].clone(), 
+                     'image_id': target['image_id'].clone()}
+                
                 if self.extra_target:
                     if isinstance(self.extra_target, str):
                         if self.extra_target == 'global':
-                            global_box = torch.tensor([[0, 0, target['origin_size'][0], target['origin_size'][1]]])
+                            global_box = torch.tensor([[0, 0, target['origin_size'][-1][0].clone(), target['origin_size'][-1][1].clone()]])
                             d['boxes'] = torch.concat((d['boxes'], global_box.to(device)), dim=0)
                             d['labels'] = torch.concat((d['labels'], torch.tensor([0], device=device)), dim=0)
                         else:
                             assert False, 'error.'
                     else:
-                        d['boxes'] = torch.concat((d['boxes'], self.extra_target['boxes'].to(device)), dim=0)
-                        d['labels'] = torch.concat((d['labels'], self.extra_target['labels'].to(device)), dim=0)
+                        d['boxes'] = torch.concat((d['boxes'], self.extra_target['boxes'].clone().to(device)), dim=0)
+                        d['labels'] = torch.concat((d['labels'], self.extra_target['labels'].clone().to(device)), dim=0)
             else:
                 if not self.extra_target:
                     d = {'boxes': torch.tensor([0, 0, 1e-2, 1e-2], device=device),
                          'labels': torch.tensor([0], device=device),
-                         'image_id': target['image_id']}
+                         'image_id': target['image_id'].clone()}
                 else:
                     if isinstance(self.extra_target, str):
-                        global_box = torch.tensor([[0, 0, target['origin_size'][0], target['origin_size'][1]]])
+                        global_box = torch.tensor([[0, 0, target['origin_size'][-1][0].clone(), target['origin_size'][-1][1].clone()]])
                         d = {'boxes': global_box.to(device),
                              'labels': torch.tensor([0], device=device),
-                             'image_id': target['image_id'],
-                             'origin_size': target['origin_size']}
+                             'image_id': target['image_id'].clone(),
+                             'origin_size': list(size.clone() for size in target['origin_size'])}
                     else:
-                        d = {'boxes': self.extra_target['boxes'].to(device),
-                             'labels': self.extra_target['labels'].to(device),
-                             'image_id': target['image_id'],
-                             'origin_size': target['origin_size']}
+                        d = {'boxes': self.extra_target['boxes'].clone().to(device),
+                             'labels': self.extra_target['labels'].clone().to(device),
+                             'image_id': target['image_id'].clone(),
+                             'origin_size': list(size.clone() for size in target['origin_size'])}
 
             toxic_targets.append(d)
 
-        return tuple(toxic_targets)
+        return toxic_targets
 
     def __call__(self, *args, **kwargs):
         return self.transform_targets(*args, **kwargs)

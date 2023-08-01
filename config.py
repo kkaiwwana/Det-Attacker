@@ -2,7 +2,7 @@ import torch
 from data import BoxNumSelector, TrafficScenesSelector
 
 ExpDirRoot = 'Exps/'
-ExpName = '07-27-12-46/'
+ExpName = '07-27-15-46/'
 ConfigFilePath = 'config.py'
 
 # Description
@@ -12,25 +12,25 @@ description = 'yolo'
 seed = 42
 
 # device
-device = 'cuda'
+device = 'cpu'
 
 # Dataset
 # sum of train dataset length + valid_ds_len should be less than 5,000
 dataset = 'COCO2017_val'
 dataset_size = 5000
-folder_path = '../autodl-tmp/val2017/'
-annotation_path = '../autodl-tmp/annotations/instances_val2017.json'
+folder_path = 'datasets/COCO_dev/val2017/'
+annotation_path = 'datasets/COCO_dev/annotations/instances_val2017.json'
 if_resize = True
 target_size = (480, 480)
-train_ds_size = 5
+train_ds_size = 50
 valid_ds_size = 100
-data_selectors = [TrafficScenesSelector(8), TrafficScenesSelector(8)]
+data_selectors = None
 
 # Patch
 
 patch_type = 'NoiseLike'
 patch_init = 'random'
-patch_size = 32, 32
+patch_size = 480, 480
 expand_stages = 2
 if_finetune = False
 finetune_patch = 'Exps/07-19-12-33/Data/patch_generator.pt'
@@ -76,7 +76,7 @@ loss_weight = {
 # yolov3 losses
 yolo_loss_weight = {
     'atk_loss_box_reg': 0.0,
-    'atk_loss_objectness': - 10.0,
+    'atk_loss_objectness': - 1.0,
     'atk_loss_classifier': 0.0,
     'loss_box_reg': -0.0,
     'loss_objectness': -0.0,
@@ -90,9 +90,9 @@ lr = 0.1
 momentum = 0.9
 weight_decay = None
 lr_scheduler = None
-batch_size = 1
+batch_size = 8
 num_epochs = 10
-iters_per_image = 30
+iters_per_image = 1
 num_workers = 16
 
 # Network

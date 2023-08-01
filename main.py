@@ -53,7 +53,7 @@ if __name__ == '__main__':
                                                              cfg.valid_ds_size,
                                                              cfg.dataset_size - cfg.train_ds_size - cfg.valid_ds_size],
                                                  # data remained doesn't require a selector, set None 
-                                                 data_selectors=cfg.data_selectors + [None])
+                                                 data_selectors=cfg.data_selectors + [None] if cfg.data_selectors else None)
     else:
         assert False, f'dataset \'{cfg.dataset}\' not found/Implemented.'
 
@@ -167,7 +167,7 @@ if __name__ == '__main__':
     f.close()
     torch.save(train_metric.metrics, exp_file_dir + 'Data/train_metrics_dict.pt')
     torch.save(valid_metric.metrics, exp_file_dir + 'Data/valid_metrics_dict.pt')
-
+    
     net2attack.eval()
     cats = COCO(cfg.annotation_path).cats
 
@@ -180,7 +180,7 @@ if __name__ == '__main__':
         return str_labels
 
     idx2show = random.randint(0, len(train_ds) + len(valid_ds) - cfg.num_imgs2show)
-
+    
     for i in range(cfg.num_imgs2show):
         if idx2show + i < len(train_ds):
             img = train_ds[idx2show + i][0].to(config.device)
@@ -191,18 +191,19 @@ if __name__ == '__main__':
         if img.shape[0] == 1:
             img = img.broadcast_to(3, -1, -1)
             
-        preds_clean_img = net2attack((img,))
+        preds_clean_img = net2attack((img.clone(),))
         boxes_clean_img = preds_clean_img[0]['boxes']
         int_labels_clean_image = preds_clean_img[0]['labels']
         str_labels_clean_image = get_str_labels(int_labels_clean_image)
-        example_image_clean = draw_bbox_with_tensor(img=img, bbox=boxes_clean_img, label=str_labels_clean_image)
+        example_image_clean = draw_bbox_with_tensor(img=img.clone(), bbox=boxes_clean_img, label=str_labels_clean_image)
 
-        preds_with_patch = net2attack((projector(img, patch_generator().to(cfg.device))[0],))
+        img_with_patch = projector(img.clone(), patch_generator().to(cfg.device))[0]
+        preds_with_patch = net2attack((img_with_patch,))
         boxes_with_patch = preds_with_patch[0]['boxes']
         int_labels_with_patch = preds_with_patch[0]['labels']
         str_labels_with_patch = get_str_labels(int_labels_with_patch)
-        example_with_patch = draw_bbox_with_tensor(img=img, bbox=boxes_with_patch, label=str_labels_with_patch)
-
+        example_with_patch = draw_bbox_with_tensor(img=img_with_patch, bbox=boxes_with_patch, label=str_labels_with_patch)
+        
         example_image = torchvision.transforms.ToPILImage()(
             torch.concat((example_image_clean, example_with_patch), dim=1)
         )

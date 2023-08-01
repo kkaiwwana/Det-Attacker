@@ -95,12 +95,12 @@ class _FasterRCNN_Like_YOLO(torch.nn.Module):
         resizer = ResizeGroundTruth(self.input_size)
         for i, target in enumerate(targets):
             target = resizer(target)
-            trans_target = torch.concat([
-                torch.tensor([i], device=device, requires_grad=False).broadcast_to((target['boxes'].shape[0], 1)),
-                target['labels'].unsqueeze(dim=1).cpu().apply_(
-                    lambda x: self.labels_frcnn2yolo[x] if self.labels_frcnn2yolo else x).to(device),
-                box_convert(target['boxes'], 'xyxy', 'cxcywh')
-            ], dim=1)
+            img_idx = torch.tensor([i], device=device).broadcast_to((target['boxes'].shape[0], 1))
+            labels = target['labels'].unsqueeze(dim=1).cpu().apply_(
+                    lambda x: self.labels_frcnn2yolo[x] if self.labels_frcnn2yolo else x).to(device)
+            boxes = box_convert(target['boxes'], 'xyxy', 'cxcywh')
+            
+            trans_target = torch.concat([img_idx, labels, boxes], dim=1)
             trans_target[:, [-4, -2]] /= self.input_size[0]
             trans_target[:, [-3, -1]] /= self.input_size[1]
 
@@ -132,7 +132,6 @@ class _FasterRCNN_Like_YOLO(torch.nn.Module):
             yolo_images = self._yolo_image_trans(images)
             yolo_targets = self._yolo_target_trans(targets) if targets else None
             yolo_toxic_targets = self._yolo_target_trans(toxic_targets) if toxic_targets else None
-
             preds = self.yolo_model(yolo_images)
 
             losses_dict = self._compute_loss(preds, yolo_targets, yolo_toxic_targets)
