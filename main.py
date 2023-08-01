@@ -69,6 +69,7 @@ if __name__ == '__main__':
     else:
         assert False, f'model \'{cfg.network}\' not found/implemented.'
 
+    
     if cfg.if_finetune and cfg.finetune_patch:
         patch = torch.load(cfg.finetune_patch)
         if isinstance(patch, torch.Tensor):
@@ -103,7 +104,6 @@ if __name__ == '__main__':
     else:
         loss_func = LossManager(log_loss_after_iters=cfg.log_loss_after_iters, **cfg.yolo_loss_weight)
 
-    # set None, Modify it if you need scheduler here.
     lr_scheduler = cfg.lr_scheduler
 
     if cfg.optimizer == 'Adam':
@@ -156,6 +156,7 @@ if __name__ == '__main__':
     watcher.save_data(filepath=exp_file_dir + 'Data', filename='/train_data.pt')
     watcher.save_fig(filepath=exp_file_dir + 'Figures', filename='/loss_curve.svg')
 
+    
     train_metric = AdvDetectionMetrics(net2attack, projector, patch_generator)
     train_metric.compute(train_ds, test_clear_imgs=cfg.test_clean_image, batch_size=cfg.test_batch_size)
     valid_metric = AdvDetectionMetrics(net2attack, projector, patch_generator)
@@ -192,6 +193,7 @@ if __name__ == '__main__':
             img = img.broadcast_to(3, -1, -1)
             
         preds_clean_img = net2attack((img.clone(),))
+        
         boxes_clean_img = preds_clean_img[0]['boxes']
         int_labels_clean_image = preds_clean_img[0]['labels']
         str_labels_clean_image = get_str_labels(int_labels_clean_image)
@@ -199,6 +201,8 @@ if __name__ == '__main__':
 
         img_with_patch = projector(img.clone(), patch_generator().to(cfg.device))[0]
         preds_with_patch = net2attack((img_with_patch,))
+
+        
         boxes_with_patch = preds_with_patch[0]['boxes']
         int_labels_with_patch = preds_with_patch[0]['labels']
         str_labels_with_patch = get_str_labels(int_labels_with_patch)

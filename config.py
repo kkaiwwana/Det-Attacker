@@ -2,30 +2,30 @@ import torch
 from data import BoxNumSelector, TrafficScenesSelector
 
 ExpDirRoot = 'Exps/'
-ExpName = '07-27-15-46/'
+ExpName = '07-31-14-32/'
 ConfigFilePath = 'config.py'
 
 # Description
-description = 'yolo'
+description = 'yolo_v3, NEW LOSS'
 
 # Seed
-seed = 42
+seed = 43
 
 # device
-device = 'cpu'
+device = 'cuda'
 
 # Dataset
 # sum of train dataset length + valid_ds_len should be less than 5,000
 dataset = 'COCO2017_val'
 dataset_size = 5000
-folder_path = 'datasets/COCO_dev/val2017/'
-annotation_path = 'datasets/COCO_dev/annotations/instances_val2017.json'
+folder_path = '../autodl-tmp/val2017/'
+annotation_path = '../autodl-tmp/annotations/instances_val2017.json'
 if_resize = True
 target_size = (480, 480)
-train_ds_size = 50
+train_ds_size = 200
 valid_ds_size = 100
-data_selectors = None
-
+data_selectors = [TrafficScenesSelector(8), TrafficScenesSelector(8)]
+# data_selectors = None
 # Patch
 
 patch_type = 'NoiseLike'
@@ -33,7 +33,7 @@ patch_init = 'random'
 patch_size = 480, 480
 expand_stages = 2
 if_finetune = False
-finetune_patch = 'Exps/07-19-12-33/Data/patch_generator.pt'
+finetune_patch = './patch.pt'
 
 # Projector
 pattern_posi = (0, 0, 0, 0)
@@ -59,7 +59,7 @@ dynamic_prj_params = {
 # Attack
 suppress_cats = 'all'
 suppress_area = None
-extra_target = {'boxes': torch.tensor([[0, 0, 0.1, 0.1]]), 'labels': torch.tensor([2])}
+extra_target = {'boxes': torch.tensor([[0, 0, 240, 240.0]]), 'labels': torch.tensor([20])}
 
 # Loss
 # faster rcnn losses
@@ -68,30 +68,30 @@ loss_weight = {
     'atk_loss_box_reg': 0.0,
     'atk_loss_objectness': 0.0,
     'atk_loss_rpn_box_reg': 0.0,
-    'loss_classifier': - 1.0,
-    'loss_box_reg': - 1.0,
-    'loss_objectness': - 1.0,
-    'loss_rpn_box_reg': - 1.0,
+    'loss_classifier':  1.0,
+    'loss_box_reg':  1.0,
+    'loss_objectness':  1.0,
+    'loss_rpn_box_reg':  1.0,
 }
 # yolov3 losses
 yolo_loss_weight = {
     'atk_loss_box_reg': 0.0,
-    'atk_loss_objectness': - 1.0,
+    'atk_loss_objectness': 0.0,
     'atk_loss_classifier': 0.0,
-    'loss_box_reg': -0.0,
-    'loss_objectness': -0.0,
-    'loss_classifier': -0.0,
+    'loss_box_reg': 0.0,
+    'loss_objectness': 1.0,
+    'loss_classifier': 0.0,
 }
 
 # Training
 mode = 'detection'
-optimizer = 'SGD'
-lr = 0.1
+optimizer = 'Adam'
+lr = 0.01
 momentum = 0.9
 weight_decay = None
 lr_scheduler = None
-batch_size = 8
-num_epochs = 10
+batch_size = 32
+num_epochs = 40
 iters_per_image = 1
 num_workers = 16
 

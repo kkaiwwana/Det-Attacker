@@ -388,12 +388,14 @@ class PatternProjector:
         else:
             # convert wave length to RGB
             R, G, B = PatternProjector._wavelength_to_rgb(self.prj_params['color_brush'])
+        
+        device = img_tensor.device
 
         if len(img_tensor.shape) == 3:
-            img_tensor = (~mask) * torch.tensor([[[R]], [[G]], [[B]]]).broadcast_to(
+            img_tensor = (~mask) * torch.tensor([[[R]], [[G]], [[B]]], device=device).broadcast_to(
                 (3, img_tensor.shape[1], img_tensor.shape[2]))
         else:
-            img_tensor = (~mask) * torch.tensor([[[[R]], [[G]], [[B]]]]).broadcast_to(
+            img_tensor = (~mask) * torch.tensor([[[[R]], [[G]], [[B]]]], device=device).broadcast_to(
                 (-1, 3, img_tensor.shape[2], img_tensor.shape[3]))
 
         return img_tensor

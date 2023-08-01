@@ -12,6 +12,18 @@ from YOLOv3.utils.loss import compute_loss
 from YOLOv3.detect import detect_image
 
 
+def disable_BN2d_track_running_stats(model: torch.nn.Module):
+    """
+    the variance and mean shifted while training adversarial patch/invisible global perturbetion.
+    BatchNorm module track running stats in default setting, which may crash some models(like yolo_v3) in
+    eval mode, especially when inffering on clean image, the means and vars are shifted to something
+    that makes model can't work and even perform worse on clean image than image with adversarial samples.
+    """
+    for module in model.modules():
+        if isinstance(module, torch.nn.BatchNorm2d):
+            module.track_running_stats = False
+
+
 class DummyBackbone(torch.nn.Module):
     # to fool FasterRCNN class
     def __init__(self, out_channels):
@@ -51,6 +63,9 @@ def fasterrcnn_mobilenet_v3_large_320_fpn_COCO():
     for i, param in enumerate(my_model.parameters()):
         param.data = pretrained_weights[i].data
         param.requires_grad = False
+    
+    disable_BN2d_track_running_stats(my_model)
+    
     return my_model
 
 
@@ -69,9 +84,19 @@ def fasterrcnn_resnet50_fpn_COCO():
     for i, param in enumerate(my_model.parameters()):
         param.data = pretrained_weights[i].data
         param.requires_grad = False
+    
+    disable_BN2d_track_running_stats(my_model)
+    
     return my_model
 
 
+def obj_score_loss(outputs, target, model):
+    
+    loss = sum([(torch.nn.ReLU()(output[..., 4]).sum() / ((output[..., 4] > 0).sum() + 1).item()) for output in outputs])
+    
+    return 0, (0, loss, 0, 0)
+
+    
 class _FasterRCNN_Like_YOLO(torch.nn.Module):
 
     def __init__(self, yolo_model, input_size, coco_annotation_path=None):
@@ -109,12 +134,12 @@ class _FasterRCNN_Like_YOLO(torch.nn.Module):
         return torch.cat(yolo_targets, dim=0).to(device)
 
     def _compute_loss(self, predictions, targets, toxic_targets=None) -> Dict[str, torch.Tensor or None]:
-        _, loss_real_gt = compute_loss(
+        _, loss_real_gt = obj_score_loss(
             predictions, targets, self.yolo_model) if targets is not None else (None, [None] * 4)
-        _.detach_()
-        _, loss_toxic_gt = compute_loss(
+        # _.detach_()
+        _, loss_toxic_gt = obj_score_loss(
             predictions, toxic_targets, self.yolo_model) if toxic_targets is not None else (None, [None] * 4)
-        _.detach_()
+        # _.detach_()
         
         losses_dict = {
             'loss_box_reg': loss_real_gt[0],
@@ -128,7 +153,7 @@ class _FasterRCNN_Like_YOLO(torch.nn.Module):
 
     def __call__(self, images, targets=None, toxic_targets=None):
         device = images[0].device
-        if self.yolo_model.training:
+        if self.training:
             yolo_images = self._yolo_image_trans(images)
             yolo_targets = self._yolo_target_trans(targets) if targets else None
             yolo_toxic_targets = self._yolo_target_trans(toxic_targets) if toxic_targets else None
@@ -159,5 +184,7 @@ def yolo_v3(model_cfg_path='models/detection/YOLOv3/config/yolov3.cfg',
     yolo_v3_model = models.load_model(model_path=model_cfg_path, weights_path=model_weight_path)
     for param in yolo_v3_model.parameters():
         param.requires_grad = False
-        
+    
+    disable_BN2d_track_running_stats(yolo_v3_model)
+    
     return _FasterRCNN_Like_YOLO(yolo_v3_model, input_size, coco_annotation_path)

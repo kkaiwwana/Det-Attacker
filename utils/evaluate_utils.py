@@ -110,6 +110,7 @@ class AdvDetectionMetrics:
                         num_boxes_clean_images += _boxes_clean_images
                         num_boxes_clean_images_outside_patch += _boxes_clean_images_outside_patch
                         if _boxes_clean_images_outside_patch > _boxes_unsuppressed:
+                            # TODO fix this metric.
                             num_success_attack += 1
 
                     pbar.update(len(imgs))
@@ -129,7 +130,7 @@ class AdvDetectionMetrics:
                 },
                 'ASR(Attack Success Rate)': round(num_success_attack / num_images, 4),
                 'Average_Boxes_Number_Increase': round((num_boxes_with_patch - num_boxes_unsuppressed) / num_images, 4),
-                'Boxes_Suppression_Rate': 1 - num_boxes_unsuppressed / num_boxes_clean_images_outside_patch,
+                'Boxes_Suppression_Rate': 1 - num_boxes_unsuppressed / (num_boxes_clean_images_outside_patch + 1),
                 'mAPs_clean_image': mAP_clean_image.compute(),
                 'mAPs_with_patch': mAP_with_patch.compute()
             }
