@@ -26,7 +26,7 @@ Aborted.
 ---
 ## *How it works?*
 
-#### *Generating Adversarial Sample with Few Image.*
+#### *Generating Adversarial Sample with Few Images.*
 <div align="center">
   <img src="IMGS/pipeline.png" width="800" />
 </div>
@@ -40,7 +40,7 @@ Aborted.
 > [!NOTE]
 > Back in time when this project launched, there are two known works ([DPatch](https://arxiv.org/abs/1806.02299)) and ([This](https://arxiv.org/abs/1906.11897)) in this domain.
 > And if you luckily read this when you are trying to work on this, don't waste your time on the former (near 400 citations though). It contains `inf` values in the patch
-> to achieve those resutls. Well, the letter is also not reproducible in my experience and they only provide a notebook. So, this code-base is basically built from scratch. But anyway, good luck!
+> and thus achieves those resutls. Well, the latter is also not reproducible in my experience and they only provided a notebook. So, this code-base was basically built from scratch. But anyway, good luck!
 > (Whisper: I’ve also uploaded all the slides I created for this project!)
 
 If you want to refer to this repo at anywhere:
