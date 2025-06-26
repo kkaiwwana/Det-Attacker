@@ -489,6 +489,9 @@ class PatternProjector:
             img_tensor[:, :, posi_x: posi_x + pattern_H, posi_y: posi_y + pattern_W] = \
                 img_patch * mask + (~mask) * (img_patch * (1 - weighted_mask) + pattern_tensor * weighted_mask)
 
+        if self.dynamic_prj_params:
+            self._dynamic_prj_params()
+
         return img_tensor, pattern_tensor * weighted_mask, (posi_x, posi_y)
 
     def __call__(self, img, pattern):

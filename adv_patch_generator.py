@@ -55,3 +55,26 @@ class ConvGenerator(nn.Module):
 
     def forward(self, batch_size=None):
         return (self.cal_seq(self.adv_patch.unsqueeze(dim=0))[0] + 0.5).clamp(0.0001, 1)
+
+
+class PrintableGenerator(nn.Module):
+
+    def __init__(self, H_init, W_init, colors='8bit'):
+        super().__init__()
+        self.patch_H, self.patch_W = H_init, W_init
+        self.latent_matrix = nn.Parameter(torch.normal(0, 0.5 / 6, size=(3, H_init, W_init), requires_grad=True))
+        if colors == '8bit':
+            self.colors = torch.arange(1, 256) / 255.0
+
+        layers = []
+        layers.append(torch.nn.ConvTranspose2d(3, 32, kernel_size=2, stride=2))
+        layers.append(torch.nn.Conv2d(32, 32, kernel_size=5, padding=2))
+        layers.append(torch.nn.ConvTranspose2d(32, 3, kernel_size=2, stride=2))
+
+        self.cal_seq = nn.Sequential(*layers)
+
+    def convert_printable(self, patch):
+        return patch * 0 + ((patch.reshape(-1, 1) >= self.colors) * self.colors).max(dim=1)[0].reshape(patch.shape)
+
+    def forward(self):
+        return self.convert_printable(self.cal_seq(self.adv_patch.unsqueeze(dim=0))[0] + 0.5)

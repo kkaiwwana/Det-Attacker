@@ -16,7 +16,7 @@ def disable_BN2d_track_running_stats(model: torch.nn.Module):
     """
     the variance and mean shifted while training adversarial patch/invisible global perturbetion.
     BatchNorm module track running stats in default setting, which may crash some models(like yolo_v3) in
-    eval mode, especially when inffering on clean image, the means and vars are shifted to something
+    eval mode, especially when inferring on clean image, the means and vars are shifted to something
     that makes model can't work and even perform worse on clean image than image with adversarial samples.
     """
     for module in model.modules():
@@ -91,8 +91,8 @@ def fasterrcnn_resnet50_fpn_COCO():
 
 
 def obj_score_loss(outputs, target, model):
-    
-    loss = sum([(torch.nn.ReLU()(output[..., 4]).sum() / ((output[..., 4] > 0).sum() + 1).item()) for output in outputs])
+
+    loss = sum([(torch.nn.ReLU()(output[..., 4]).sum() / ((output[..., 4] > 0).sum() + 1)) for output in outputs])
     
     return 0, (0, loss, 0, 0)
 
@@ -165,7 +165,7 @@ class _FasterRCNN_Like_YOLO(torch.nn.Module):
             detects = [torch.tensor(
                 detect_image(
                     model=self.yolo_model,
-                    image=(img * 256).to(torch.uint8).permute(1, 2, 0).cpu().numpy(),
+                    image=(img * 255).to(torch.uint8).permute(1, 2, 0).cpu().numpy(),
                     img_size=self.input_size[0]),
                 device=device
             ) for img in images]
