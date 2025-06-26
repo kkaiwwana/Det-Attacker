@@ -21,7 +21,7 @@ if __name__ == '__main__':
     from utils.visualize_utils import draw_bbox_with_tensor
     from utils.utils import PatternProjector, ToxicTargetsGenerator, log, LossManager, ResizeGroundTruth, set_seed
     from adv_patch_generator import *
-    from data import coco_2017_dev_5k
+    from data import coco_2017_dev_5k, carla_dataset
     from trainer import AdvPatchTrainer
 
     set_seed(cfg.seed)
@@ -54,6 +54,10 @@ if __name__ == '__main__':
                                                              cfg.dataset_size - cfg.train_ds_size - cfg.valid_ds_size],
                                                  # data remained doesn't require a selector, set None 
                                                  data_selectors=cfg.data_selectors + [None] if cfg.data_selectors else None)
+    elif cfg.dataset == 'CARLA_dataset':
+        train_ds, valid_ds, _ = carla_dataset(split_rate=[cfg.train_ds_size, cfg.valid_ds_size,
+                                                          cfg.dataset_size - cfg.train_ds_size - cfg.valid_ds_size],)
+        
     else:
         assert False, f'dataset \'{cfg.dataset}\' not found/Implemented.'
 
@@ -66,6 +70,8 @@ if __name__ == '__main__':
                              model_weight_path=cfg.yolo_weight_path,
                              coco_annotation_path=cfg.annotation_path,
                              input_size=cfg.yolo_input_size)
+    elif cfg.network == 'fasterrcnn_resnet50_fpn_Carla':
+        net2attack = fasterrcnn_resnet50_fpn_Carla('models/detection/ModelLocal/fasterrcnn_resnet50_fpn_Carla.pt')
     else:
         assert False, f'model \'{cfg.network}\' not found/implemented.'
 
@@ -84,10 +90,13 @@ if __name__ == '__main__':
         patch_generator = NoiseLikePatch(cfg.patch_size[0], cfg.patch_size[1], init_mode=cfg.patch_init)
     elif cfg.patch_type == 'TpConv':
         patch_generator = TpConvGenerator(cfg.patch_size[0], cfg.patch_size[1], expand_stages=cfg.expand_stages)
+    elif cfg.patch_type == 'Printable':
+        patch_generator = PrintableGenerator(cfg.patch_size[0], cfg.patch_size[1])
     else:
         assert False, f'patch generator not found/load.'
 
     projector = PatternProjector(pattern_posi=cfg.pattern_posi,
+                                 specify_indices=cfg.specify_indices,
                                  random_posi=cfg.random_posi,
                                  pattern_scale=cfg.pattern_scale,
                                  rotation_angle=cfg.rotation_angle,
@@ -98,6 +107,7 @@ if __name__ == '__main__':
                                  luminance_smooth_boundary=cfg.luminance_smooth_boundary,
                                  style_converter=cfg.style_converter,
                                  dynamic_prj_params=cfg.dynamic_prj_params if cfg.enable_dynamic_prj_params else None)
+    # projector = ...
 
     if cfg.network != 'yolov3':
         loss_func = LossManager(log_loss_after_iters=cfg.log_loss_after_iters, **cfg.loss_weight)
@@ -141,21 +151,29 @@ if __name__ == '__main__':
                               targets_generator=targets_generator,
                               device=cfg.device)
     watcher = TrainWatcher()
-    trainer.train(mode=cfg.mode,
-                  train_ds=train_ds,
-                  batch_size=cfg.batch_size,
-                  num_epochs=cfg.num_epochs,
-                  iters_per_image=cfg.iters_per_image,
-                  valid_ds=valid_ds,
-                  log_filepath=exp_file_dir + 'train_log.txt',
-                  num_workers=cfg.num_workers,
-                  train_watcher=watcher)
-
-    torch.save(patch_generator, exp_file_dir + 'Data' + '/patch_generator.pt')
-    torch.save(patch_generator(), exp_file_dir + 'Data' + '/patch.pt')
-    watcher.save_data(filepath=exp_file_dir + 'Data', filename='/train_data.pt')
-    watcher.save_fig(filepath=exp_file_dir + 'Figures', filename='/loss_curve.svg')
-
+    try:
+        trainer.train(mode=cfg.mode,
+                      train_ds=train_ds,
+                      batch_size=cfg.batch_size,
+                      num_epochs=cfg.num_epochs,
+                      iters_per_image=cfg.iters_per_image,
+                      valid_ds=valid_ds,
+                      log_filepath=exp_file_dir + 'train_log.txt',
+                      num_workers=cfg.num_workers,
+                      train_watcher=watcher)
+    
+    except KeyboardInterrupt:
+        # to do following job
+        pass
+       
+    try:
+        torch.save(patch_generator, exp_file_dir + 'Data' + '/patch_generator.pt')
+        torch.save(patch_generator(), exp_file_dir + 'Data' + '/patch.pt')
+        watcher.save_data(filepath=exp_file_dir + 'Data', filename='/train_data.pt')
+        watcher.save_fig(filepath=exp_file_dir + 'Figures', filename='/loss_curve.svg')
+    
+    except KeyError:
+        pass
     
     train_metric = AdvDetectionMetrics(net2attack, projector, patch_generator)
     train_metric.compute(train_ds, test_clear_imgs=cfg.test_clean_image, batch_size=cfg.test_batch_size)
@@ -170,27 +188,39 @@ if __name__ == '__main__':
     torch.save(valid_metric.metrics, exp_file_dir + 'Data/valid_metrics_dict.pt')
     
     net2attack.eval()
-    cats = COCO(cfg.annotation_path).cats
+    if cfg.dataset == 'COCO2017_val':
+        cats = COCO(cfg.annotation_path).cats
+        
+        def get_str_labels(int_labels):
+            str_labels = []
+            if isinstance(int_labels, int):
+                int_labels = [int_labels]
+            for label in int_labels:
+                str_labels.append(cats[int(label)]['name'])
+            return str_labels
+    
+    elif cfg.dataset == 'CARLA_dataset':
+        from data import CarlaDS
+        cats = CarlaDS.labels_int2str
+        
+        def get_str_labels(int_labels):
+            return [cats[i.item()] for i in int_labels]
+        
 
-    def get_str_labels(int_labels):
-        str_labels = []
-        if isinstance(int_labels, int):
-            int_labels = [int_labels]
-        for label in int_labels:
-            str_labels.append(cats[int(label)]['name'])
-        return str_labels
 
     idx2show = random.randint(0, len(train_ds) + len(valid_ds) - cfg.num_imgs2show)
     
     for i in range(cfg.num_imgs2show):
         if idx2show + i < len(train_ds):
-            img = train_ds[idx2show + i][0].to(config.device)
+            img, target = train_ds[idx2show + i]
         else:
-            img = valid_ds[idx2show + i - len(train_ds)][0].to(config.device)
+            img, target = valid_ds[idx2show + i - len(train_ds)]
         
         # check channels
         if img.shape[0] == 1:
             img = img.broadcast_to(3, -1, -1)
+        
+        img = img.to(config.device)
             
         preds_clean_img = net2attack((img.clone(),))
         
@@ -198,8 +228,11 @@ if __name__ == '__main__':
         int_labels_clean_image = preds_clean_img[0]['labels']
         str_labels_clean_image = get_str_labels(int_labels_clean_image)
         example_image_clean = draw_bbox_with_tensor(img=img.clone(), bbox=boxes_clean_img, label=str_labels_clean_image)
-
-        img_with_patch = projector(img.clone(), patch_generator().to(cfg.device))[0]
+        
+        if projector.specify_indices is True:
+            img_with_patch = projector(img.clone(), patch_generator().to(cfg.device), target['patch_indices'])[0]
+        else:
+            img_with_patch = projector(img.clone(), patch_generator().to(cfg.device))[0]
         preds_with_patch = net2attack((img_with_patch,))
 
         

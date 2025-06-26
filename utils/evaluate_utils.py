@@ -72,7 +72,7 @@ class AdvDetectionMetrics:
             patch = self.patch().to(device) if callable(self.patch) else self.patch.to(device)
             assert isinstance(patch, torch.Tensor) and len(patch.shape) == 3, \
                 'invalid patch. arg \'patch\' passed should be either a tensor directly or a callable tensor generator'
-
+ 
             with torch.no_grad():
                 for imgs, targets in dl:
                     # move images to device specified and synchronize channels
@@ -82,8 +82,11 @@ class AdvDetectionMetrics:
                         imgs[i] = imgs[i].to(device)
                     # project adv patch to a copy of origin images
                     imgs_with_patch = []
-                    for img in imgs:
-                        img_with_patch, _patch, (posi_x, posi_y) = self.projector(img.clone(), patch.clone())
+                    for img, target in zip(imgs, targets):
+                        if self.projector.specify_indices is True:
+                            img_with_patch, _patch, (posi_x, posi_y) = self.projector(img.clone(), patch.clone(), target['patch_indices'])
+                        else:
+                            img_with_patch, _patch, (posi_x, posi_y) = self.projector(img.clone(), patch.clone())
                         patch_size = _patch.shape[1:]
                         patch_areas.append(
                             torch.tensor(

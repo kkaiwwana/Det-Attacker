@@ -16,7 +16,7 @@ def disable_BN2d_track_running_stats(model: torch.nn.Module):
     """
     the variance and mean shifted while training adversarial patch/invisible global perturbetion.
     BatchNorm module track running stats in default setting, which may crash some models(like yolo_v3) in
-    eval mode, especially when inferring on clean image, the means and vars are shifted to something
+    eval mode, especially when inffering on clean image, the means and vars are shifted to something
     that makes model can't work and even perform worse on clean image than image with adversarial samples.
     """
     for module in model.modules():
@@ -74,7 +74,7 @@ def fasterrcnn_resnet50_fpn_COCO():
         weights=torchvision.models.detection.FasterRCNN_ResNet50_FPN_Weights.COCO_V1
     )
     out_channels = pretrained_model.backbone(torch.rand(1, 3, 1, 1))['0'].shape[1]
-    my_model = FasterRCNN(DummyBackbone(out_channels), num_classes=91)
+    my_model = FasterRCNN(DummyBackbone(out_channels), num_classes=91) # box_nms_thresh=0.2
 
     pretrained_weights = []
     for param in pretrained_model.parameters():
@@ -90,9 +90,81 @@ def fasterrcnn_resnet50_fpn_COCO():
     return my_model
 
 
-def obj_score_loss(outputs, target, model):
+def _fasterrcnn_resnet50_fpn_Carla():
+    # well, typical detection network works perfectly, efficiently here.
+    pretrained_model = torchvision.models.detection.fasterrcnn_resnet50_fpn(
+        weights=torchvision.models.detection.FasterRCNN_ResNet50_FPN_Weights.COCO_V1
+    )
+    out_channels = pretrained_model.backbone(torch.rand(1, 3, 1, 1))['0'].shape[1]
+    # we've actually known the rough shape of region, so we can actually improve anchor generation strategy
+    
 
-    loss = sum([(torch.nn.ReLU()(output[..., 4]).sum() / ((output[..., 4] > 0).sum() + 1)) for output in outputs])
+    defaults = {
+        "min_size": 720,
+        "max_size": 1080,
+        "rpn_pre_nms_top_n_test": 100,
+        "rpn_post_nms_top_n_test": 50,
+        "rpn_pre_nms_top_n_train": 100,
+        "rpn_post_nms_top_n_train": 50,
+        "rpn_score_thresh": 0.05,
+        "box_nms_thresh": 0.2
+    }
+    from torchvision.models.detection import FasterRCNN
+    from torchvision.models.detection.anchor_utils import AnchorGenerator
+    
+    anchor_sizes = ((32,), (64,), (128,), (256,), (512,))
+    aspect_ratios = ((0.5, 1.0, 2.0),) * len(anchor_sizes) 
+    
+    anchor_generator = AnchorGenerator(sizes=anchor_sizes, aspect_ratios=aspect_ratios)
+    
+    class DummyBackbone(torch.nn.Module):
+        # to fool FasterRCNN class, because Faster RCNN requires a backbone network with attribute 'out_channels'
+        def __init__(self, out_channels):
+            super().__init__()
+            self.out_channels = out_channels
+
+    my_model = FasterRCNN(DummyBackbone(out_channels),
+                          num_classes=5,
+                          rpn_anchor_generator=anchor_generator,
+                          **defaults
+                          )
+    # use backbone in pretrained faster rcnn model directly
+    # skip complicated steps in building a backbone with FPN.
+    my_model.backbone = pretrained_model.backbone
+    
+    disable_BN2d_track_running_stats(my_model)
+            
+    return my_model
+
+
+class FasterRCNNShell(torch.nn.Module):
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+    
+    def __call__(self, imgs, targets=None, toxic_targets=None):
+        if self.training:
+            loss_dict = self.model(imgs, targets)
+            loss_dict['atk_loss_classifier'] = 0
+            loss_dict['atk_loss_box_reg'] = 0
+            loss_dict['atk_loss_objectness'] = 0
+            loss_dict['atk_loss_rpn_box_reg'] = 0
+            
+            return loss_dict
+        else:
+            return self.model(imgs)
+
+
+def fasterrcnn_resnet50_fpn_Carla(pretrained_model=None):
+    if pretrained_model:
+        return FasterRCNNShell(torch.load(pretrained_model))
+    else:
+        return FasterRCNNShell(_fasterrcnn_resnet50_fpn_Carla())
+
+    
+def obj_score_loss(outputs, target, model):
+    
+    loss = sum([(torch.nn.ReLU()(output[..., 4]).sum() / ((output[..., 4] > 0).sum() + 1).item()) for output in outputs])
     
     return 0, (0, loss, 0, 0)
 
@@ -165,7 +237,7 @@ class _FasterRCNN_Like_YOLO(torch.nn.Module):
             detects = [torch.tensor(
                 detect_image(
                     model=self.yolo_model,
-                    image=(img * 255).to(torch.uint8).permute(1, 2, 0).cpu().numpy(),
+                    image=(img * 256).to(torch.uint8).permute(1, 2, 0).cpu().numpy(),
                     img_size=self.input_size[0]),
                 device=device
             ) for img in images]

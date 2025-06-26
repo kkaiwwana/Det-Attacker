@@ -47,7 +47,10 @@ class AdvPatchTrainer:
                     for i in range(len(images)):
                         images[i] = images[i].broadcast_to((3,) + images[i][0].shape).clone()
                         images[i] = images[i].to(self.device[0])
-                        images[i], _, (_, _) = self.projector(images[i], pattern)
+                        if self.projector.specify_indices is True:
+                            images[i], _, (_, _) = self.projector(images[i], pattern, targets[i]['patch_indices'])
+                        else:
+                            images[i], _, (_, _) = self.projector(images[i], pattern)
                     for target in targets:
                         target['boxes'] = target['boxes'].to(self.device[0])
                         target['labels'] = target['labels'].to(self.device[0])
@@ -109,13 +112,16 @@ class AdvPatchTrainer:
                         images[i] = images[i].broadcast_to((3,) + images[i][0].shape).clone()
                         # project adv pattern to img
                         images[i] = images[i].to(self.device[0])
-                        images[i], _, (_, _) = self.projector(images[i], pattern)
+                        if self.projector.specify_indices is True:
+                            images[i], _, (_, _) = self.projector(images[i], pattern, targets[i]['patch_indices'])
+                        else:
+                            images[i], _, (_, _) = self.projector(images[i], pattern)
                     for target in targets:
                         target['boxes'] = target['boxes'].to(self.device[0])
                         target['labels'] = target['labels'].to(self.device[0])
                         # some bboxes in COCO have 0 height or width, which are invalid inputs for model
                         # we add a micro positive number to avoid this issue
-                        target['boxes'][:, 2: 4] += 1e-2
+                        target['boxes'][:, 2: 4] += 1e-4
                         annotation.append(target)
                     self.optimizer.zero_grad()
                     self.net2attack.train()

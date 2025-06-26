@@ -56,7 +56,7 @@ class ConvGenerator(nn.Module):
     def forward(self, batch_size=None):
         return (self.cal_seq(self.adv_patch.unsqueeze(dim=0))[0] + 0.5).clamp(0.0001, 1)
 
-
+    
 class PrintableGenerator(nn.Module):
 
     def __init__(self, H_init, W_init, colors='8bit'):
@@ -74,7 +74,9 @@ class PrintableGenerator(nn.Module):
         self.cal_seq = nn.Sequential(*layers)
 
     def convert_printable(self, patch):
+        self.colors = self.colors.to(patch.device)
         return patch * 0 + ((patch.reshape(-1, 1) >= self.colors) * self.colors).max(dim=1)[0].reshape(patch.shape)
 
     def forward(self):
-        return self.convert_printable(self.cal_seq(self.adv_patch.unsqueeze(dim=0))[0] + 0.5)
+        return (self.cal_seq(self.latent_matrix.unsqueeze(dim=0))[0] + 0.5).clamp(0.0001, 1)
+        # return self.convert_printable(self.cal_seq(self.latent_matrix.unsqueeze(dim=0))[0] + 0.5)

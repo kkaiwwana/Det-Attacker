@@ -220,6 +220,7 @@ class LaserStyleConverter:
 class PatternProjector:
     def __init__(self,
                  pattern_posi: Tuple or str = (0, 0),
+                 specify_indices: bool = False,
                  pattern_scale: Tuple[int or float] or float = 1.0,
                  rotation_angle: Tuple[int or float] or float = None,
                  pattern_padding: int = 0,
@@ -293,6 +294,8 @@ class PatternProjector:
 
         # arg random posi was removed, to support old version code, keep this.
         self.random_posi = self.random_posi or (kwargs['random_posi'] if 'random_posi' in kwargs else False)
+        
+        self.specify_indices = specify_indices
 
     def _dynamic_prj_params(self):
         def _modify_value(op):
@@ -302,16 +305,17 @@ class PatternProjector:
                 op = operator.add
 
             for param_name, increment in self.dynamic_prj_params.items():
-                if 'end_value' not in self.dynamic_prj_params[param_name].keys():
-                    self.prj_params[param_name] = \
-                        tuple([v + i for v, i in zip(self.prj_params[param_name],
-                                                     self.dynamic_prj_params[param_name]['increment'])])
-                else:
-                    self.prj_params[param_name] = \
-                        tuple([min(op(v, i), e, key=lambda x: abs(x)) for v, i, e in
-                               zip(self.prj_params[param_name],
-                                   self.dynamic_prj_params[param_name]['increment'],
-                                   self.dynamic_prj_params[param_name]['end_value'])])
+                if isinstance(increment, dict):
+                    if 'end_value' not in self.dynamic_prj_params[param_name].keys():
+                        self.prj_params[param_name] = \
+                            tuple([v + i for v, i in zip(self.prj_params[param_name],
+                                                         self.dynamic_prj_params[param_name]['increment'])])
+                    else:
+                        self.prj_params[param_name] = \
+                            tuple([min(op(v, i), e, key=lambda x: abs(x)) for v, i, e in
+                                   zip(self.prj_params[param_name],
+                                       self.dynamic_prj_params[param_name]['increment'],
+                                       self.dynamic_prj_params[param_name]['end_value'])])
 
         self._iter_counter += 1
         if self.dynamic_prj_params['strategy'] == 'linear':
@@ -406,15 +410,27 @@ class PatternProjector:
         weighted_mask = (_mask + (~_mask) * luminance / self.prj_params['luminance_smooth_boundary'] + 1e-5)
         return weighted_mask
 
-    def project_pattern(self, img, pattern):
+    def project_pattern(self, img, pattern, patch_indices=None):
         """
         Parameters:
             img: object image, support image filepath/3-D tensor/4-D tensor(a batch)
             pattern: your pattern
+            
         Returns:
             image_tensor: image tensor with input pattern injected in
             pattern: input pattern, it will be broadcast to a 4-D tensor when input image(s) is a 4-D tensor
         """
+        if self.specify_indices:
+            def _patch_downsample(img, target_size):
+                return transforms.Resize(target_size)(img)
+             
+            patch_tensor = _patch_downsample(pattern, patch_indices.shape[2:])
+            for i in range(patch_indices.shape[0]):
+                mix_rate = random.uniform(*self.prj_params['mix_rate'])
+                img[:, patch_indices[i][0], patch_indices[i][1]] = img[:, patch_indices[i][0], patch_indices[i][1]] * (1 - mix_rate) + patch_tensor * mix_rate
+            
+            return img, patch_tensor, (patch_indices.shape[-2], patch_indices.shape[-1])
+                
         img_tensor, pattern_tensor = img, pattern
         batch_size = None
         # when img is a file path, open it and convert it to a tensor
@@ -488,14 +504,33 @@ class PatternProjector:
             img_patch = img_tensor[:, :, posi_x: posi_x + pattern_H, posi_y: posi_y + pattern_W]
             img_tensor[:, :, posi_x: posi_x + pattern_H, posi_y: posi_y + pattern_W] = \
                 img_patch * mask + (~mask) * (img_patch * (1 - weighted_mask) + pattern_tensor * weighted_mask)
-
+        
         if self.dynamic_prj_params:
             self._dynamic_prj_params()
-
+            
+        
         return img_tensor, pattern_tensor * weighted_mask, (posi_x, posi_y)
 
-    def __call__(self, img, pattern):
-        return self.project_pattern(img, pattern)
+    def __call__(self, img, pattern, patch_indices=None):
+        return self.project_pattern(img, pattern, patch_indices)
+
+    
+class Projector:
+    def __init__(self, transparency=None):
+        self.transparency = transparency
+    
+    @staticmethod
+    def _patch_downsample(img, target_size):
+        return transforms.Resize(target_size)(img)
+        
+    def __call__(self, img, patch_data, patch_indices):
+        patch_data = Projector._patch_downsample(self.patch_data, patch_indices.shape[2:])
+        
+        for i in range(patch_indices.shape[0]):
+            img[:, patch_indices[i][0], patch_indices[i][1]] = patch_data
+        
+        # TODO: compute metric for new projector
+        return img, None, (patch_indices[0][0], patch_indices[0][1])
 
 
 def set_seed(seed: int = 42) -> None:
